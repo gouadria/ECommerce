@@ -1,0 +1,29 @@
+﻿@page
+@model SuccessModel
+@{
+    Layout = "";
+    ViewData["Title"] = "Success";
+}
+
+<h2>Paiement Réussi !</h2>
+<p>Merci pour votre achat ! Votre commande a été enregistrée avec succès.</p>
+
+@if (Model.OrderId == 0)
+{
+    <p class="text-danger">Erreur : Numéro de commande manquant.</p>
+}
+else
+{
+    <!-- Bouton pour voir la facture -->
+    <a asp-page="/Invoice" asp-route-orderId="@Model.OrderId" class="btn btn-primary">
+        Voir la Facture
+    </a>
+
+    <!-- Bouton pour télécharger la facture en PDF -->
+    <a asp-page="/DownloadInvoice" asp-route-orderId="@Model.OrderId" class="btn btn-success">
+        Télécharger la Facture (PDF)
+    </a>
+
+    <!-- Bouton Imprimer -->
+    <button onclick="window.print()" class="btn btn-warning">Imprimer</button>
+}

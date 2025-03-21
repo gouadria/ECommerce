@@ -1,0 +1,132 @@
+﻿@page
+@model ECommerce.Pages.Payement1Model
+@{
+    Layout = null;
+    ViewData["Title"] = "Paiement";
+}
+
+<h2>Paiement par Carte Bancaire</h2>
+
+<p>Email : <strong>@Model.UserEmail</strong></p>
+<p>Téléphone : <strong>@Model.PhoneNumber</strong></p>
+
+<form id="payment-form" method="post">
+    @Html.AntiForgeryToken()
+
+    <label for="amount">Montant (SAR) :</label>
+    <input type="number" id="amount" name="amount" value="@Model.Amount" readonly />
+
+    <input type="hidden" id="email" name="email" value="@Model.UserEmail" />
+    <input type="hidden" id="phone" name="phone" value="@Model.PhoneNumber" />
+
+    <button type="submit" id="pay-button">Payer</button>
+</form>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    document.getElementById('payment-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        let amount = document.getElementById('amount').value;
+        let email = document.getElementById('email').value;
+        let phone = document.getElementById('phone').value;
+        let csrfToken = document.querySelector('[name=__RequestVerificationToken]').value;
+
+        if (isNaN(amount) || amount <= 0) {
+            alert("Veuillez entrer un montant valide !");
+            return;
+        }
+
+            fetch(window.location.pathname, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': csrfToken
+        },
+        body: JSON.stringify({ amount: amount, email: email, phone: phone })
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                throw new Error("Erreur serveur : " + text);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (!data.orderId) {
+            throw new Error("Réponse invalide de Razorpay.");
+        }
+
+        var options = {
+            key: '@ViewData["RazorpayKey"]',
+            amount: data.amount * 100,
+            currency: 'INR',
+            order_id: data.orderId,
+            name: 'ECommerce',
+            description: 'Paiement sécurisé',
+            handler: function (response) {
+                alert('Paiement réussi ! ID: ' + response.razorpay_payment_id);
+            },
+            prefill: {
+                email: data.email,
+                contact: data.phone
+            }
+        };
+
+        new Razorpay(options).open();
+    })
+    .catch(error => {
+        console.error('❌ Erreur de communication avec le serveur :', error);
+        alert('❌ Erreur : ' + error.message);
+    });
+
+    });
+</script>
+
+
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+        text-align: center;
+    }
+
+    h2 {
+        color: #333;
+    }
+
+    #dropin-container {
+        max-width: 400px;
+        margin: 20px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    #submit-button {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        cursor: pointer;
+        font-size: 1.2em;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+
+        #submit-button:hover {
+            background-color: #45a049;
+        }
+
+    svg {
+        height: 24px !important;
+        width: auto !important;
+    }
+
+</style>
+

@@ -1,0 +1,90 @@
+﻿@page
+@model ECommerce.Pages.CartModel
+@{
+    ViewData["Title"] = "Cart";
+}
+
+<meta name="csrf-token" content="@ViewData["CsrfToken"]" />
+
+<div class="container-fluid pt-5">
+    <div class="row px-xl-5">
+        <div class="col-lg-8 table-responsive mb-5">
+            <table id="cartTable" class="table table-bordered text-center mb-0">
+                <thead class="bg-secondary text-dark">
+                    <tr>
+                        <th>Products</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Total</th>
+                        <th>Remove</th>
+                    </tr>
+                </thead>
+                <tbody id="cartTableBody" class="align-middle">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="col-lg-4">
+            <button type="button" id="saveCartButton" class="btn btn-block btn-primary my-3 py-3">Proceed To Checkout</button>
+            <div class="d-flex justify-content-between mt-2">
+                <h5 class="font-weight-bold">Total</h5>
+                <h5 class="font-weight-bold" id="total">$0.00</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function getCsrfToken() {
+            return document.querySelector('meta[name="csrf-token"]').content;
+        }
+
+        document.getElementById("saveCartButton").addEventListener("click", function (event) {
+            event.preventDefault();
+            saveCart();
+        });
+
+        function saveCart() {
+            const cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+            if (cart.length === 0) {
+                alert("Votre panier est vide.");
+                return;
+            }
+
+            const cartItems = cart.map(item => ({
+                ProductId: item.id,
+                Quantity: item.quantity
+            }));
+
+            console.log("Données du panier envoyées :", JSON.stringify(cartItems));
+
+            fetch('/Cart?handler=SaveCart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': getCsrfToken()
+                },
+                body: JSON.stringify(cartItems)
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Erreur HTTP ' + response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log("Réponse du serveur :", data);
+                if (data.success) {
+                    localStorage.removeItem("cart");
+                    window.location.href = "/Checkout";
+                } else {
+                    alert("Erreur lors de l'enregistrement du panier !");
+                }
+            })
+            .catch(error => {
+                console.error("Erreur d'envoi du panier :", error);
+                alert("Une erreur s'est produite.");
+            });
+        }
+    </script>
+}

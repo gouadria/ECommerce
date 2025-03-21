@@ -1,0 +1,168 @@
+﻿@page
+@model CategoryModel
+@{
+    Layout = "_LayoutAdmin";
+    ViewData["Title"] = "Create Category";
+}
+
+<div class="container mt-5">
+    <div class="row d-flex flex-nowrap" style="height: 100vh;">
+        <!-- Card with the form on the left -->
+        <div class="col-sm-12 col-md-4 d-flex flex-column" style="overflow-y: auto;">
+            <div class="card flex-grow-1">
+                <div class="card-body">
+                    <h4 class="card-title">Category</h4>
+                    <hr />
+                    <form asp-action="OnPostAsync" method="post" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="categoryName">Category Name</label>
+                            <input type="text" class="form-control" id="categoryName" placeholder="Enter Category Name" name="categoryName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="file">Image</label>
+                            <input type="file" class="form-control-file" id="file" name="ImageFile" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group form-inline">
+                                    <input type="checkbox" class="form-check-input" id="IsActive" name="IsActive" />
+                                    <label class="form-check-label" for="IsActive">Is Active</label>
+                                </div>
+                            </div>
+                        </div>
+                        <button id="btnAddOrUpdate" type="submit" class="btn btn-primary" onclick="btnAddOrUpdate_Click">Upload</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card with the category details on the right -->
+        <div class="col-sm-12 col-md-8">
+            @if (Model.Categories != null && Model.Categories.Any())
+            {
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">List Category</h5>
+                        <hr />
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Image</th>
+                                    <th>Is Active</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var category in Model.Categories)
+                                {
+                                    <tr>
+                                        <td>@category.CategoryName</td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(category.CategoryImageUrl))
+                                            {
+                                                <img src="@category.CategoryImageUrl" alt="Image" style="width: 50px; height: 50px;" />
+                                            }
+                                            else
+                                            {
+                                                <span>No image</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (category.IsActive)
+                                            {
+                                                <span class="badge badge-success">Active</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-danger">Inactive</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span style="font-size: 0.8rem; color: #555;">@category.CreatedDate.ToString("dd MMM yyyy, HH:mm")</span>
+                                        </td>
+                                        <td>
+                                            <form method="post" asp-page-handler="Delete" asp-route-id="@category.CategoryId" style="display: inline;">
+                                                <button type="submit" class="btn btn-danger btn-sm"><i data-feather="trash" class="svg-icon mr-2 ml-1"></i></button>
+                                            </form>
+                                            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#updateModal-@category.CategoryId"><i data-feather="edit" class="svg-icon mr-2 ml-1"></i></button>
+
+                                            <!-- Update Modal -->
+                                            <div class="modal fade" id="updateModal-@category.CategoryId" tabindex="-1" role="dialog" aria-labelledby="updateModalLabel-@category.CategoryId" aria-hidden="true">
+                                                <div class="modal-dialog" role="document">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="updateModalLabel-@category.CategoryId">Update Category</h5>
+                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <form method="post" asp-page-handler="Update" enctype="multipart/form-data">
+                                                                <input type="hidden" name="Id" value="@category.CategoryId" />
+                                                                <div class="form-group">
+                                                                    <label for="Name">Name</label>
+                                                                    <input type="text" class="form-control" name="Name" value="@category.CategoryName" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="ImageUrl">Image</label>
+                                                                    <input type="file" class="form-control-file" name="ImageUrl" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="IsActive">Is Active</label>
+                                                                    <input type="checkbox" name="IsActive" @(category.IsActive ? "checked" : "") />
+                                                                </div>
+                                                                <button type="submit" class="btn btn-primary">Update</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        
+                    </div>
+                </div>
+
+
+                <nav aria-label="Page navigation example">
+                    <ul class="pagination pagination-sm">
+                        <!-- Précédent -->
+                        <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" asp-page="./Category" asp-route-currentPage="@(Model.CurrentPage - 1)">Previous</a>
+                        </li>
+
+                        <!-- Pages -->
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(Model.CurrentPage == i ? "active" : "")">
+                                <a class="page-link" asp-page="./Category" asp-route-currentPage="@i">@i</a>
+                            </li>
+                        }
+
+                        <!-- Suivant -->
+                        <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                            <a class="page-link" asp-page="./Category" asp-route-currentPage="@(Model.CurrentPage + 1)">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+
+               }
+            
+            else
+            {
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">List Category</h5>
+                        <hr />
+                        <p>No categories available</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

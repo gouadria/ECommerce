@@ -1,0 +1,13 @@
+2025-02-24 18:54:45.450 +01:00 [INF] Connexion réussie.
+2025-02-24 18:58:32.850 +01:00 [WRN] Unable to configure Browser Link script injection on the response. 
+2025-02-24 18:58:32.851 +01:00 [WRN] Unable to configure browser refresh script injection on the response. Consider manually adding '<script src="/_framework/aspnetcore-browser-refresh.js"></script>' to the body of the page.
+2025-02-24 18:58:54.372 +01:00 [WRN] Unable to configure Browser Link script injection on the response. 
+2025-02-24 18:58:54.373 +01:00 [WRN] Unable to configure browser refresh script injection on the response. Consider manually adding '<script src="/_framework/aspnetcore-browser-refresh.js"></script>' to the body of the page.
+2025-02-24 19:01:14.962 +01:00 [WRN] Unable to configure Browser Link script injection on the response. 
+2025-02-24 19:01:14.963 +01:00 [WRN] Unable to configure browser refresh script injection on the response. Consider manually adding '<script src="/_framework/aspnetcore-browser-refresh.js"></script>' to the body of the page.
+2025-02-24 19:01:57.769 +01:00 [WRN] Unable to configure Browser Link script injection on the response. 
+2025-02-24 19:01:57.770 +01:00 [WRN] Unable to configure browser refresh script injection on the response. Consider manually adding '<script src="/_framework/aspnetcore-browser-refresh.js"></script>' to the body of the page.
+2025-02-24 19:07:55.183 +01:00 [WRN] Unable to configure Browser Link script injection on the response. 
+2025-02-24 19:07:55.184 +01:00 [WRN] Unable to configure browser refresh script injection on the response. Consider manually adding '<script src="/_framework/aspnetcore-browser-refresh.js"></script>' to the body of the page.
+2025-02-24 19:08:07.519 +01:00 [WRN] Unable to configure Browser Link script injection on the response. 
+2025-02-24 19:08:07.519 +01:00 [WRN] Unable to configure browser refresh script injection on the response. Consider manually adding '<script src="/_framework/aspnetcore-browser-refresh.js"></script>' to the body of the page.

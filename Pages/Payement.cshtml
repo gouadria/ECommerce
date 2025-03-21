@@ -1,0 +1,76 @@
+﻿@page
+@model ECommerce.Pages.PayPalPageModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Paiement";
+}
+
+<h2>Paiement</h2>
+
+<form method="post" asp-page="/Payement">
+    <input type="hidden" name="Amount" value="@Model.Amount" />
+    <input type="hidden" id="selectedPaymentMode" name="paymentMode" value="paypal" /> <!-- Valeur initiale de PayPal -->
+    <!-- Section pour choisir le mode de paiement avec des boutons -->
+    <div class="payment-options">
+        <button type="submit" id="paypal-button" class="payment-btn" >
+            <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_  <x111x69.jpg" alt="PayPal" />
+            Payer avec PayPal
+        </button>
+
+         
+    </div>
+
+    <!-- Montant affiché de manière plus marquante -->
+    <div class="amount-info">
+        <label>Montant à payer :</label>
+        <div class="amount-amount">
+            <span class="currency-symbol">$</span><span class="amount-number">@Model.Amount</span>
+        </div>
+ 
+    </div>
+
+    
+</form>
+
+<!-- Affichage du bouton PayPal uniquement si l'option PayPal est sélectionnée -->
+<div id="paypal-button-container" style="display:none;"></div>
+
+
+
+@if (!string.IsNullOrEmpty(Model.ApprovalUrl))
+{
+    <script>
+        window.location.href = "/Payement?total=" + totalAmount;
+        console.log("Redirection vers PayPal : @Model.ApprovalUrl");
+        window.location.href = "@Model.ApprovalUrl";
+    </script>
+}
+
+<style>
+    .payment-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 10px;
+        display: inline-block;
+        text-align: center;
+        width: 100%;
+        background-color: #f7f7f7;
+    }
+
+        .payment-btn img {
+            width: 100px; /* Ajustez selon vos besoins */
+            display: block;
+            margin: 0 auto;
+        }
+
+    .amount-info {
+        margin-top: 20px;
+        font-size: 18px;
+    }
+</style>
+
+
+

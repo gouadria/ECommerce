@@ -1,0 +1,141 @@
+﻿@page
+@model ECommerce.Pages.CheckoutModel
+@{
+    ViewData["Title"] = "Checkout";
+}
+
+
+<!-- Page Header Start -->
+<div class="container-fluid bg-secondary mb-5">
+    <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 300px">
+        <h1 class="font-weight-semi-bold text-uppercase mb-3">Checkout</h1>
+    </div>
+</div>
+<!-- Page Header End -->
+<!-- Checkout Start -->
+<div class="container-fluid pt-5">
+    <div class="row px-xl-5">
+        <!-- Billing Address -->
+        <div class="col-lg-8">
+            <div class="mb-4">
+                <h4 class="font-weight-semi-bold mb-4">Adresse de facturation</h4>
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label>Nom d'utilisateur</label>
+                        <input class="form-control" type="text" id="username" placeholder="Entrez votre nom d'utilisateur">
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label>E-mail</label>
+                        <input class="form-control" type="text" id="email" value="@Model.CurrentUser?.Email" readonly>
+
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label>Téléphone</label>
+                        <input class="form-control" type="text" id="phone" placeholder="Entrez votre numéro de téléphone">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="col-lg-4">
+            <div class="card border-secondary mb-5">
+                <div class="card-header bg-secondary border-0">
+                    <h4 class="font-weight-semi-bold m-0">Résumé de la commande</h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="font-weight-medium mb-3">Détails des produits</h5>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Produit</th>
+                                <th>Quantité</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.CartProducts)
+                            {
+                                <tr>
+                                    <td>@item.ProductName</td>
+                                    <td>@item.Quantity</td>
+                                    <td>@(item.Product.Price * item.Quantity) $</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <hr class="mt-0">
+                    <div class="d-flex justify-content-between mb-3 pt-1">
+                        <h6 class="font-weight-medium">Sous-total</h6>
+                        <h6 class="font-weight-medium">@Model.TotalAmount $</h6>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <h6 class="font-weight-medium">Frais de livraison</h6>
+                        <h6 class="font-weight-medium">$10</h6>
+                    </div>
+                </div>
+                <div class="card-footer border-secondary bg-transparent">
+                    <div class="d-flex justify-content-between mt-2">
+                        <h5 class="font-weight-bold">Total</h5>
+                        <h5 class="font-weight-bold">@(Model.TotalAmount + 10) $</h5>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Options -->
+            <div class="card border-secondary mb-5">
+                <div class="card-header bg-secondary border-0">
+                    <h4 class="font-weight-semi-bold m-0">Méthode de paiement</h4>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="custom-control custom-radio">
+                            <input type="radio" class="custom-control-input" name="payment" id="paypal">
+                            <label class="custom-control-label" for="paypal">PayPal</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-radio">
+                            <input type="radio" class="custom-control-input" name="payment" id="directcheck">
+                            <label class="custom-control-label" for="directcheck">Chèque Direct</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer border-secondary bg-transparent">
+                    <button onclick="submitOrder()" class="btn btn-lg btn-block btn-primary font-weight-bold my-3 py-3">Passer la commande</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+           function submitOrder() {
+            var selectedPayment = document.querySelector('input[name="payment"]:checked');
+            if (!selectedPayment) {
+                alert("Veuillez sélectionner un mode de paiement.");
+                return;
+            }
+
+            var totalAmount = parseFloat(@Html.Raw(Model.TotalAmount)) + 10; // Ajout des frais de livraison
+            var username = document.getElementById("username").value.trim();
+            var email = document.getElementById("email").value.trim();
+            var phone = document.getElementById("phone").value.trim();
+            if (!username || !email || !phone) {
+                alert("Veuillez remplir tous les champs.");
+                return;
+            }
+
+            var paymentUrl = selectedPayment.id === "paypal" ? "/Payement" : "/Payement1";
+            var fullUrl = paymentUrl + "?total=" + totalAmount +
+                          "&email=" + encodeURIComponent(email) +
+                          "&phone=" + encodeURIComponent(phone);
+
+            console.log("Redirection vers :", fullUrl); // ✅ Vérification
+            window.location.href = fullUrl;
+        }
+
+    </script>
+
+}

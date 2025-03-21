@@ -1,0 +1,76 @@
+﻿@page
+@model ECommerce.Pages.Shared.LayoutAdminModel
+@{
+    Layout = "_LayoutAdmin";
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="d-flex">
+    <div class="sidebar" style="width: 250px; height: 100vh; position: fixed; background-color: #dee2e6; padding-top: 20px;">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link text-dark" href="/Admin/Commandes">Commandes</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark" href="/Admin/Product">Products</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark" href="/Admin/Category">Category</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark" href="#">Paramètres</a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content-area" style="margin-left: 250px; flex-grow: 1; padding: 20px; background-color: #f1f3f5;">
+        <h1 class="text-center mb-4 text-dark">Tableau de bord</h1>
+
+        <div class="card-group">
+            <div class="card border-right">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div>
+                            <h2 class="text-dark mb-1 font-weight-medium">236</h2>
+                            <h6 class="text-muted font-weight-normal mb-0">New Clients</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card border-right">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div>
+                            <h2 class="text-dark mb-1 font-weight-medium">$18,306</h2>
+                            <h6 class="text-muted font-weight-normal mb-0">Earnings of Month</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card border-right">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div>
+                            <h2 class="text-dark mb-1 font-weight-medium">1538</h2>
+                            <h6 class="text-muted font-weight-normal mb-0">New Projects</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div>
+                            <h2 class="text-dark mb-1 font-weight-medium">864</h2>
+                            <h6 class="text-muted font-weight-normal mb-0">Projects</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+

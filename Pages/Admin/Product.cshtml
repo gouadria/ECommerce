@@ -1,0 +1,259 @@
+﻿@page
+
+@model ProductModel
+@{
+    Layout = "_LayoutAdmin";
+    ViewData["Title"] = "Create Product";
+}
+
+<div class="container mt-5">
+    <form method="get" class="mb-4">
+        <div class="row">
+            <div class="col-md-3">
+                <label for="CategoryFilter" style="font-size:14px">Catégorie</label>
+                <select  name="CategoryFilter" class="form-control" style="font-size:14px">
+                <option value="">Toutes les catégories</option>
+                @foreach (var category in Model.CategoryList)
+                {
+                        <option value="@category.Value">@category.Text</option>
+                            
+                    
+        
+                }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="MinPrice" style="font-size:14px">Min Price</label>
+                <input type="number" id="MinPrice" name="MinPrice" class="form-control" style="font-size:14px">
+            </div>
+            <div class="col-md-3">
+                <label for="MaxPrice" style="font-size:14px">Max Price</label>
+                <input type="number" id="MaxPrice" name="MaxPrice" class="form-control" style="font-size:14px">
+            </div>
+            <div class="col-md-3">
+                <label for="DateFilter" style="font-size:14px">Date</label>
+                <input type="date" id="DateFilter" name="DateFilter" class="form-control" style="font-size:14px">
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-12 text-right">
+                <button type="submit" class="btn btn-primary" style="font-size:14px">Filter</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="row d-flex flex-nowrap" style="height: 100vh;">
+        <!-- Card with the form on the left -->
+        <div class="col-sm-12 col-md-3 d-flex flex-column"style="padding-left: 5px;">
+            <div class="card text-dark bg-light mb-3" style="max-width: 18rem;">
+                <div class="card-header">Header</div>
+                <div class="card-body">
+                    
+                    <form method="post" enctype="multipart/form-data" class="small-text">
+    <div class="form-group">
+        <label for="ProductName"style = "font-size:14px ">Product Name</label>
+        <input type="text" style="font-size:14px " class="form-control" id="ProductName" placeholder="Enter Product Name" name="Product.ProductName" required>
+    </div>
+    
+    <div class="form-group">
+                            <label asp-for="Product.Price" class="control-label" style="font-size:14px "></label>
+                            <input asp-for="Product.Price" class="form-control" style="font-size:14px " />
+                            <span asp-validation-for="Product.Price" class="text-danger" style="font-size:14px "></span>
+    </div>
+    <div class="form-group">
+                            <label asp-for="Product.Quantity" class="control-label" style="font-size:14px "></label>
+                            <input asp-for="Product.Quantity" class="form-control" style="font-size:14px " />
+                            <span asp-validation-for="Product.Quantity" class="text-danger" style="font-size:14px "></span>
+    </div>
+    <div class="form-group">
+                            <label asp-for="Product.Category" class="control-label" style="font-size:14px "></label>
+                            <select asp-for="Product.CategoryId" class="form-control" asp-items="Model.CategoryList" style="font-size:14px "></select>
+                            <span asp-validation-for="Product.CategoryId" class="text-danger" style="font-size:14px "></span>
+    </div>
+                        <div class="form-group">
+                            <label for="ImageFile">Images du produit</label>
+                            <input type="file" name="ImageFile" multiple class="form-control" />
+                        </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="form-group form-inline">
+                                    <input type="checkbox" class="form-check-input" id="IsActive" name="IsActive" style="font-size:16px " />
+                                    <label class="form-check-label" for="IsActive" style="font-size:14px ">Is Active</label>
+            </div>
+        </div>
+    </div>
+                        <button type="submit" class="btn btn-primary" style="font-size:14px ">Upload</button>
+</form>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Card with the category details on the right -->
+        <div class="col-sm-12 col-md-9" style="padding-right: 5px;">
+            @if (Model.Products != null && Model.Products.Any())
+            {
+                
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">List Product</h5>
+                        <hr />
+                        <div class="table-wrapper">
+                         <button class="scroll-btn left-btn">&#8592;</button>
+                         <div class="table-container">
+                            <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Image</th>
+                                   
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th>CategoryName</th>
+                                    <th>Is Active</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                        @foreach (var product in Model.Products)
+                                {
+                                    <tr>
+                                        <td>@product.ProductName</td>
+                                        <td>
+                                                    @if (product.ProductImages != null && product.ProductImages.Any())
+                                                    {
+                                                        var imageUrl = product.ProductImages.FirstOrDefault()?.ImageUrl; // Récupérer la première image
+                                                        @if (!string.IsNullOrEmpty(imageUrl))
+                                                        {
+                                                            <img src="@imageUrl" alt="Image" style="width: 50px; height: 50px;" />
+                                                        }
+                                                        
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>No image</span>
+                                                    }
+                                        </td>
+                                        
+                                        <td>@product.Price</td>
+                                        <td>@product.Quantity</td>
+                                        <td>@product.Category.CategoryName</td>
+                                        <td>
+                                            @if (product.IsActive)
+                                            {
+                                                <span class="badge badge-success">Active</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-danger">Inactive</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span style="font-size: 0.8rem; color: #555;">@product.CreatedDate.ToString("dd MMM yyyy, HH:mm")</span>
+                                        </td>
+                                        <td>
+                                            <form method="post" asp-page-handler="Delete" asp-route-id="@product.ProductId" style="display: inline;">
+                                                <button type="submit" class="btn btn-danger btn-sm"><i data-feather="trash" class="svg-icon mr-2 ml-1"></i></button>
+                                            </form>
+                                            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#updateModal-@product.ProductId"><i data-feather="edit" class="svg-icon mr-2 ml-1"></i></button>
+
+                                            <!-- Update Modal -->
+                                            <div class="modal fade" id="updateModal-@product.ProductId" tabindex="-1" role="dialog" aria-labelledby="updateModalLabel-@product.ProductId" aria-hidden="true">
+                                                <div class="modal-dialog" role="document">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="updateModalLabel@product.ProductId">Update Product</h5>
+                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <form method="post" asp-page-handler="Update" enctype="multipart/form-data">
+                                                                <input type="hidden" name="Id" value="@product.ProductId" />
+                                                                <div class="form-group">
+                                                                    <label for="Name">Name</label>
+                                                                    <input type="text" class="form-control" name="ProductName" value="@product.ProductName" />
+                                                                </div>
+                                                                        <div class="form-group">
+                                                                            <label for="ImageFile">Images du produit</label>
+                                                                            <input type="file" name="ImageFile" multiple class="form-control" />
+                                                                        </div>
+                                                                <div class="form-group">
+                                                                    <label for="IsActive">Is Active</label>
+                                                                    <input type="checkbox" name="IsActive" @(product.IsActive ? "checked" : "") />
+                                                                </div>
+                                                                <button type="submit" class="btn btn-primary">Update</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                          </table>
+                        </div>
+                        <button class="scroll-btn right-btn">&#8594;</button>
+                      </div>
+                    </div>
+                </div>
+
+                <nav aria-label="Page navigation example">
+                    <ul class="pagination pagination-sm">
+                        <!-- Précédent -->
+                        <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" asp-page="./Product" asp-route-currentPage="@(Model.CurrentPage - 1)">Previous</a>
+                        </li>
+
+                        <!-- Pages -->
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(Model.CurrentPage == i ? "active" : "")">
+                                <a class="page-link" asp-page="./Product" asp-route-currentPage="@i">@i</a>
+                            </li>
+                        }
+
+                        <!-- Suivant -->
+                        <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                            <a class="page-link" asp-page="./Product" asp-route-currentPage="@(Model.CurrentPage + 1)">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+            else
+            {
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">List Product</h5>
+                        <hr />
+                        <p>No products available</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+    </div>
+    @section Scripts
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const leftBtn = document.querySelector('.left-btn');
+                const rightBtn = document.querySelector('.right-btn');
+                const tableContainer = document.querySelector('.table-container');
+
+                if (leftBtn && rightBtn && tableContainer) {
+                    leftBtn.addEventListener('click', function() {
+                        tableContainer.scrollBy({ left: -200, behavior: 'smooth' });
+                    });
+
+                    rightBtn.addEventListener('click', function() {
+                        tableContainer.scrollBy({ left: 200, behavior: 'smooth' });
+                    });
+                } else {
+                    console.error('Éléments non trouvés dans le DOM');
+                }
+            });
+        </script>
+    }
