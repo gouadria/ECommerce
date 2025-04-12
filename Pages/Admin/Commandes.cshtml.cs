@@ -12,18 +12,18 @@ public class OrdersModel : PageModel
         _context = context;
     }
 
-    public IList<Order> Orders { get; set; }
+    public List<Order> Orders { get; set; } = new List<Order>();
 
     public async Task OnGetAsync()
     {
         Orders = await _context.Orders
-        .OrderByDescending(o => o.OrderDate)  // Tri décroissant : le plus récent d'abord
+        .OrderByDescending(o => o.OrderDate)  // Tri dÃ©croissant : le plus rÃ©cent d'abord
         .ToListAsync();
     }
 
     public async Task<IActionResult> OnPostAsync(int[] processedOrders)
     {
-        // Récupérer les commandes marquées pour mise à jour
+        // RÃ©cupÃ©rer les commandes marquÃ©es pour mise Ã  jour
         if (processedOrders != null)
         {
             var ordersToUpdate = await _context.Orders
@@ -32,14 +32,14 @@ public class OrdersModel : PageModel
 
             foreach (var order in ordersToUpdate)
             {
-                // Mettre à jour le statut en fonction de la case à cocher
-                order.Status = "Traité";  // On marque comme traité si la case est cochée
+                // Mettre Ã  jour le statut en fonction de la case Ã  cocher
+                order.Status = "TraitÃ©";  // On marque comme traitÃ© si la case est cochÃ©e
             }
 
-            await _context.SaveChangesAsync();  // Sauvegarder les changements dans la base de données
+            await _context.SaveChangesAsync();  // Sauvegarder les changements dans la base de donnÃ©es
         }
 
-        // Rediriger vers la même page pour actualiser la liste des commandes
+        // Rediriger vers la mÃªme page pour actualiser la liste des commandes
         return RedirectToPage();
     }
 }
