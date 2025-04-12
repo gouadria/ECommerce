@@ -113,10 +113,13 @@ public class SuccessModel : PageModel
 
             // Vérification que firstOrder n'est pas null avant d'assigner OrderId
             if (firstOrder != null)
-            {
-                OrderId = firstOrder.OrderId;
-                Console.WriteLine($"First OrderId assigned: {OrderId}");
-            }
+               if (firstOrder != null)
+                {
+                  OrderId = firstOrder!.OrderId;
+                  Console.WriteLine($"First OrderId assigned: {OrderId}");
+                 }
+
+
 
             // Vider le panier après validation
             Console.WriteLine($"Removing cart: {lastCart.CartId}");
