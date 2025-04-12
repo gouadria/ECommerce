@@ -52,13 +52,22 @@ public class ZohoTokenService
 
         // Vérifier si la clé "access_token" existe
         if (tokenResponse.TryGetProperty("access_token", out var accessToken))
-        {
-            return accessToken.GetString();
-        }
-        else
-        {
-            throw new Exception("Error: Access token not found. Response: " + json);
-        }
+{
+    var token = accessToken.GetString();
+    if (!string.IsNullOrEmpty(token))
+    {
+        return token;
+    }
+    else
+    {
+        throw new Exception("Error: access_token is null or empty in Zoho response.");
+    }
+}
+else
+{
+    throw new Exception("Error: Access token not found. Response: " + json);
+}
+
     }
 }
 
