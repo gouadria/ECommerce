@@ -1,7 +1,8 @@
-﻿using System.Net.Http;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Linq;
 
 public class ZohoTokenService
 {
@@ -10,8 +11,8 @@ public class ZohoTokenService
 
     public ZohoTokenService(IConfiguration config, HttpClient httpClient)
     {
-        _config = config;
-        _httpClient = httpClient;
+        _config = config ?? throw new ArgumentNullException(nameof(config));
+        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
     }
 
     public async Task<string> GetAccessTokenAsync()
@@ -20,11 +21,17 @@ public class ZohoTokenService
         var clientSecret = _config["Zoho:ClientSecret"];
         var refreshToken = _config["Zoho:RefreshToken"];
 
+        // Vérification des valeurs nulles avant de créer les KeyValuePairs
+        if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret) || string.IsNullOrEmpty(refreshToken))
+        {
+            throw new Exception("Error: ClientId, ClientSecret, or RefreshToken is null or empty.");
+        }
+
         var content = new FormUrlEncodedContent(new[]
         {
-            new KeyValuePair<string, string>("refresh_token", refreshToken),
-            new KeyValuePair<string, string>("client_id", clientId),
-            new KeyValuePair<string, string>("client_secret", clientSecret),
+            new KeyValuePair<string, string>("refresh_token", refreshToken ?? string.Empty),
+            new KeyValuePair<string, string>("client_id", clientId ?? string.Empty),
+            new KeyValuePair<string, string>("client_secret", clientSecret ?? string.Empty),
             new KeyValuePair<string, string>("grant_type", "refresh_token")
         });
 
@@ -54,6 +61,7 @@ public class ZohoTokenService
         }
     }
 }
+
 
 
 
