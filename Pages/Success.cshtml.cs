@@ -1,12 +1,3 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using ECommerce.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-
 public class SuccessModel : PageModel
 {
     private readonly EcommerceDbContext _context;
@@ -18,7 +9,8 @@ public class SuccessModel : PageModel
         _userManager = userManager;
     }
 
-    public int OrderId { get; set; }
+    // Modifié pour être nullable
+    public int? OrderId { get; set; }
 
     public async Task<IActionResult> OnGetAsync(string token, string payerId)
     {
@@ -110,6 +102,7 @@ public class SuccessModel : PageModel
 
             await _context.SaveChangesAsync();
 
+            // Vérification que firstOrder n'est pas null avant d'assigner OrderId
             if (firstOrder != null)
             {
                 OrderId = firstOrder.OrderId;
@@ -131,5 +124,5 @@ public class SuccessModel : PageModel
             return RedirectToPage("/Error");
         }
     }
-
 }
+
