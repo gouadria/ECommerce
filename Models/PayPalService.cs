@@ -78,48 +78,43 @@ public class PayPalService
                 IEnumerable<dynamic>? links = jsonResponse?.links;
 
                 if (links != null)
-                {
-                    string? approvalUrl = links.ElementAtOrDefault(1)?.href;
-                    return approvalUrl ?? "Erreur: L'URL d'approbation PayPal est manquante.";
-                }
-                else
-                {
-                    return "Erreur: Les liens de la réponse PayPal sont manquants.";
-                }
-            }
-            else
-            {
-                var errorResponse = await response.Content.ReadAsStringAsync();
-                return $"Erreur lors de la création du paiement: {errorResponse}";
-            }
-        }
+{
+    string approvalUrl = links.ElementAtOrDefault(1)?.href ?? "Erreur: L'URL d'approbation PayPal est manquante.";
+    return approvalUrl;
+}
+else
+{
+    return "Erreur: Les liens de la réponse PayPal sont manquants.";
+}
+
         catch (Exception ex)
         {
             return $"Erreur lors de la communication avec l'API PayPal: {ex.Message}";
         }
     }
 
-    private async Task<string> GetAccessTokenAsync()
+   private async Task<string> GetAccessTokenAsync()
+{
+    using var client = new HttpClient();
+    var byteArray = new UTF8Encoding().GetBytes($"{clientId}:{clientSecret}");
+    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
+
+    var content = new FormUrlEncodedContent(new[]
     {
-        using var client = new HttpClient();
-        var byteArray = new UTF8Encoding().GetBytes($"{clientId}:{clientSecret}");
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
+        new KeyValuePair<string, string>("grant_type", "client_credentials")
+    });
 
-        var content = new FormUrlEncodedContent(new[]
-        {
-            new KeyValuePair<string, string>("grant_type", "client_credentials")
-        });
+    var response = await client.PostAsync("https://api.sandbox.paypal.com/v1/oauth2/token", content);
 
-        var response = await client.PostAsync("https://api.sandbox.paypal.com/v1/oauth2/token", content);
-
-        if (response.IsSuccessStatusCode)
-        {
-            var result = await response.Content.ReadAsStringAsync();
-            dynamic jsonResponse = JsonConvert.DeserializeObject(result);
-            string? token = jsonResponse?.access_token;
-            return token ?? string.Empty;
-        }
-
-        return string.Empty;
+    if (response.IsSuccessStatusCode)
+    {
+        var result = await response.Content.ReadAsStringAsync();
+        dynamic jsonResponse = JsonConvert.DeserializeObject(result);
+        string token = jsonResponse?.access_token ?? string.Empty;
+        return token;
     }
+
+    return string.Empty;
+}
+
 }
