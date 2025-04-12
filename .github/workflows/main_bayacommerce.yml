@@ -1,68 +1,66 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy ASP.Net Core app to Azure Web App - bayacommerce
 
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:
+      - main  # Détecte automatiquement les pushs sur la branche principale
+  workflow_dispatch:  # Permet également d'exécuter le workflow manuellement si nécessaire
 
 jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read # Permet de récupérer le code depuis le dépôt
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4  # Récupère le code depuis le dépôt GitHub
 
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.x'
+          dotnet-version: '9.x'  # Spécifie la version de .NET Core à utiliser
 
       - name: Build with dotnet
-        run: dotnet build --configuration Release
+        run: dotnet build --configuration Release  # Compile l'application en mode Release
 
       - name: dotnet publish
-        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"  # Publie l'application
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          path: ${{env.DOTNET_ROOT}}/myapp  # Charge l'artefact généré pour le job de déploiement
 
   deploy:
     runs-on: windows-latest
-    needs: build
+    needs: build  # Dépend du job 'build'
     environment:
-      name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+      name: 'Production'  # Le nom de l'environnement de déploiement
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}  # URL de l'App Service après le déploiement
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write  # Nécessaire pour la demande de jeton JWT
+      contents: read  # Nécessaire pour récupérer le code
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: .net-app
-      
+          name: .net-app  # Télécharge l'artefact du job de construction
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_ADD88DF0C6384746AAD2B8F8A730192C }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_24746A3ADB3B408297626E1859585E56 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_048FC10734D44A38BE50F905CCCD2470 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_ADD88DF0C6384746AAD2B8F8A730192C }}  # ID client pour l'authentification Azure
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_24746A3ADB3B408297626E1859585E56 }}  # ID du tenant
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_048FC10734D44A38BE50F905CCCD2470 }}  # ID d'abonnement Azure
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'bayacommerce'
-          slot-name: 'Production'
-          package: .
+          app-name: 'bayacommerce'  # Nom de l'application dans Azure App Service
+          slot-name: 'Production'  # Nom du slot de production sur Azure
+          package: .  # Le répertoire contenant l'artefact à déployer (l'application publiée)
+
           
