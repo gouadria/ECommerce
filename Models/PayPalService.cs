@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System;
+using System.Linq; // Ajout de l'espace de noms pour les méthodes d'extension LINQ
 
 public class PayPalService
 {
