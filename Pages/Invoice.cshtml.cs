@@ -12,7 +12,7 @@ public class InvoiceModel : PageModel
     private readonly EcommerceDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
 
-    public List<Order> Orders { get; set; }
+    public List<Order>? Orders { get; set; }
     public string UserName { get; set; }
 
     public InvoiceModel(EcommerceDbContext context, UserManager<IdentityUser> userManager)
