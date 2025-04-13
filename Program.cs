@@ -21,11 +21,11 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Services(services)
     .Enrich.FromLogContext()
     .WriteTo.Console()
-    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)); // Changez la destination des logs si nécessaire
+    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day));
 
 // Configuration de la base de données
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<ECommerce.Models.EcommerceDbContext>(options =>
+builder.Services.AddDbContext<EcommerceDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -39,9 +39,9 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 builder.Services.AddRazorPages();
+
 builder.Services.Configure<IdentityOptions>(options =>
 {
-    // Paramètres de mot de passe
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireNonAlphanumeric = true;
@@ -49,20 +49,17 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequiredLength = 6;
     options.Password.RequiredUniqueChars = 1;
 
-    // Paramètres de verrouillage
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
 
-    // Paramètres des utilisateurs
     options.User.AllowedUserNameCharacters =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
     options.User.RequireUniqueEmail = false;
 });
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    // Paramètres des cookies
     options.Cookie.HttpOnly = true;
     options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
 
@@ -84,33 +81,39 @@ builder.Services.AddScoped<IAuthorizationHandler, ContactIsOwnerAuthorizationHan
 builder.Services.AddSingleton<IAuthorizationHandler, ContactAdministratorsAuthorizationHandler>();
 builder.Services.AddSingleton<IAuthorizationHandler, ContactManagerAuthorizationHandler>();
 
-builder.Services.AddHttpsRedirection(options =>
-{
-    options.HttpsPort = 44356;
-});
+// Redirection HTTPS sans forcer un port spécifique
+builder.Services.AddHttpsRedirection();
 
-builder.Services.AddDistributedMemoryCache(); // Ajoute la mémoire cache pour la session
+// Ajout du cache mémoire pour la session
+builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(30); // Temps d'expiration de la session
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true; // La session doit être disponible même sans consentement des cookies
+    options.Cookie.IsEssential = true;
 });
 
 var app = builder.Build();
 
+// Application des migrations + seed des données
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<ECommerce.Models.EcommerceDbContext>();
-    context.Database.Migrate(); // Appliquer les migrations de base de données
+    try
+    {
+        var context = services.GetRequiredService<EcommerceDbContext>();
+        context.Database.Migrate(); // Appliquer les migrations
 
-    // Charger les données de seed (si nécessaire)
-    var testUserPw = builder.Configuration.GetValue<string>("SeedUserPW");
-    await SeedData.Initialize(services, testUserPw);
+        var testUserPw = builder.Configuration.GetValue<string>("SeedUserPW");
+        await SeedData.Initialize(services, testUserPw); // Données de seed
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "Erreur pendant l'initialisation de la base de données");
+    }
 }
 
-// Utilisation des middlewares pour gérer l'environnement
+// Middlewares
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -118,20 +121,32 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Error");
-    app.UseHsts(); // Strict-Transport-Security pour renforcer l'utilisation de HTTPS
+    app.UseHsts(); // Strict HTTPS
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
-app.UseSession(); // Permet de gérer la session utilisateur
+app.UseSession();
 
-app.UseAuthentication(); // Authentification via cookies
-app.UseAuthorization(); // Autorisation de l'utilisateur pour accéder aux ressources
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapRazorPages();
 
-app.Run();
-
+// Démarrage sécurisé avec log
+try
+{
+    Log.Information("Démarrage de l'application...");
+    await app.RunAsync();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Erreur critique : l'application ne peut pas démarrer.");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
 #endif
