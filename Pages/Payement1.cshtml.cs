@@ -33,25 +33,27 @@ namespace ECommerce.Pages
             UserEmail = string.Empty;
         }
 
-        public async Task<IActionResult> OnGetAsync(decimal? total, string email, string phone)
-        {
-            Console.WriteLine($"QueryString: {Request.QueryString}");
-            Console.WriteLine($"Total: {total}, Email: {email}, Phone: {phone}");
+       public async Task<IActionResult> OnGetAsync(decimal? total, string email, string phone)
+{
+    Console.WriteLine($"QueryString: {Request.QueryString}");
+    Console.WriteLine($"Total: {total}, Email: {email}, Phone: {phone}");
 
-            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(phone))
-            {
-                Console.WriteLine("❌ Erreur: Email ou numéro de téléphone manquant.");
-                return BadRequest("Email et numéro de téléphone obligatoires.");
-            }
+    if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(phone))
+    {
+        Console.WriteLine("❌ Erreur: Email ou numéro de téléphone manquant.");
+        return BadRequest("Email et numéro de téléphone obligatoires.");
+    }
 
-            Amount = total ?? 50.00M;
-            UserEmail = email;
-            PhoneNumber = phone;
+    Amount = total ?? 50.00M;
+    UserEmail = email;
+    PhoneNumber = phone;
 
-            ViewData["RazorpayKey"] = _configuration["Razorpay:KeyId"];
-            await Task.CompletedTask; // ← Ajouté pour éviter le warning "async sans await"
-            return Page();
-        }
+    var currentUser = await _userManager.GetUserAsync(User); // exemple d’appel async utile
+    Console.WriteLine($"Utilisateur connecté : {currentUser?.Email}");
+
+    ViewData["RazorpayKey"] = _configuration["Razorpay:KeyId"];
+    return Page();
+}
 
         [HttpPost]
         public async Task<IActionResult> OnPostAsync([FromBody] PaymentRequest paymentRequest)
