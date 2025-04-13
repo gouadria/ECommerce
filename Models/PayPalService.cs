@@ -67,30 +67,36 @@ public class PayPalService
 
         var content = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
 
-        try
-        {
-            var response = await client.PostAsync("https://api-m.sandbox.paypal.com/v2/checkout/orders", content);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadAsStringAsync();
-                dynamic jsonResponse = JsonConvert.DeserializeObject(result);
-                IEnumerable<dynamic>? links = jsonResponse?.links;
-
-                if (links != null)
+       try
 {
-    string approvalUrl = links.ElementAtOrDefault(1)?.href ?? "Erreur: L'URL d'approbation PayPal est manquante.";
-    return approvalUrl;
-}
-else
-{
-    return "Erreur: Les liens de la réponse PayPal sont manquants.";
-}
+    var response = await client.PostAsync("https://api-m.sandbox.paypal.com/v2/checkout/orders", content);
 
-        catch (Exception ex)
+    if (response.IsSuccessStatusCode)
+    {
+        var result = await response.Content.ReadAsStringAsync();
+        dynamic jsonResponse = JsonConvert.DeserializeObject(result);
+        IEnumerable<dynamic>? links = jsonResponse?.links;
+
+        if (links != null)
         {
-            return $"Erreur lors de la communication avec l'API PayPal: {ex.Message}";
+            string approvalUrl = links.ElementAtOrDefault(1)?.href ?? "Erreur: L'URL d'approbation PayPal est manquante.";
+            return approvalUrl;
         }
+        else
+        {
+            return "Erreur: Les liens de la réponse PayPal sont manquants.";
+        }
+    }
+    else
+    {
+        return $"Erreur PayPal: {response.StatusCode}";
+    }
+}
+catch (Exception ex)
+{
+    return $"Erreur lors de la communication avec l'API PayPal: {ex.Message}";
+}
+
     }
 
    private async Task<string> GetAccessTokenAsync()
