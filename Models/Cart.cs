@@ -32,33 +32,29 @@ namespace ECommerce.Models
         }
     }
 
-    public class CartProduct
+   public class CartProduct
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int CartProductId { get; set; }
-        
+
         [Required]
         public int CartId { get; set; }
 
         [Required]
         public int ProductId { get; set; }
 
+        // Déclarez ProductName comme non-nullable et initialisé
         [Required]
-        public required string ProductName { get; set; }
+        public string ProductName { get; set; } = string.Empty;
 
-        public int Quantity { get; set; } // Stockage de la quantité ici
+        public int Quantity { get; set; }
+
+        // Propriétés de navigation rendues nullable pour être auto-remplies par EF Core
+        [Required]
+        public virtual Cart? Cart { get; set; }
 
         [Required]
-        public required Cart Cart { get; set; }
-
-        [Required]
-        public required Product Product { get; set; }
-
-        // Initialisation optionnelle de ProductName pour fournir une valeur par défaut.
-        public CartProduct()
-        {
-            ProductName = string.Empty;
-        }
+        public virtual Product? Product { get; set; }
     }
 }
