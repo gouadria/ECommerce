@@ -21,11 +21,10 @@ jobs:
           dotnet-version: '9.x'  # Spécifie la version de .NET Core à utiliser
 
       - name: Build with dotnet
-        run: dotnet build ECommerce.csproj --configuration Release
-
+        run: dotnet build ECommerce.csproj --configuration Release  # Compilation du projet
 
       - name: dotnet publish
-        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"  # Publie l'application
+        run: dotnet publish ECommerce.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"  # Publication explicite du projet
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -52,16 +51,14 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_ADD88DF0C6384746AAD2B8F8A730192C }}  # ID client pour l'authentification Azure
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_24746A3ADB3B408297626E1859585E56 }}  # ID du tenant
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_048FC10734D44A38BE50F905CCCD2470 }}  # ID d'abonnement Azure
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_ADD88DF0C6384746AAD2B8F8A730192C }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_24746A3ADB3B408297626E1859585E56 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_048FC10734D44A38BE50F905CCCD2470 }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'bayacommerce'  # Nom de l'application dans Azure App Service
-          slot-name: 'Production'  # Nom du slot de production sur Azure
-          package: .  # Le répertoire contenant l'artefact à déployer (l'application publiée)
-
-          
+          app-name: 'bayacommerce'
+          slot-name: 'Production'
+          package: .net-app  # On utilise l'artefact téléchargé pour le déploiement
