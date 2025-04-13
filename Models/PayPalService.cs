@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System;
-using System.Linq;
 using System.Net.Http.Headers;
 
 public class PayPalService
@@ -75,13 +74,13 @@ public class PayPalService
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadAsStringAsync();
-                dynamic jsonResponse = JsonConvert.DeserializeObject(result);
+                dynamic? jsonResponse = JsonConvert.DeserializeObject(result);
 
-                if (jsonResponse?.links != null)
+                if (jsonResponse != null && jsonResponse.links != null)
                 {
                     foreach (var link in jsonResponse.links)
                     {
-                        if (link?.rel == "approve")
+                        if (link != null && link.rel != null && link.rel == "approve" && link.href != null)
                         {
                             return link.href.ToString();
                         }
@@ -120,15 +119,15 @@ public class PayPalService
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadAsStringAsync();
-                dynamic jsonResponse = JsonConvert.DeserializeObject(result);
+                dynamic? jsonResponse = JsonConvert.DeserializeObject(result);
 
-                string token = jsonResponse?.access_token;
-                return token ?? string.Empty;
+                if (jsonResponse != null && jsonResponse.access_token != null)
+                {
+                    return jsonResponse.access_token.ToString();
+                }
             }
-            else
-            {
-                return string.Empty;
-            }
+
+            return string.Empty;
         }
         catch (Exception ex)
         {
