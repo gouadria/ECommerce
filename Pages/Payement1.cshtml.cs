@@ -20,16 +20,19 @@ namespace ECommerce.Pages
         private readonly UserManager<IdentityUser> _userManager;
 
         [BindProperty] public decimal Amount { get; set; }
-        [BindProperty] public string PhoneNumber { get; set; }
-        public string UserEmail { get; set; }
+        [BindProperty] public string? PhoneNumber { get; set; }
+        public string? UserEmail { get; set; }
 
-        public Payement1Model(IConfiguration configuration, UserManager<IdentityUser> userManager, RazorpayService razorpayService)
-        {
-            _configuration = configuration;
-            _razorpayService = razorpayService;
-            _userManager = userManager;
-            Amount = 50.00M; // Valeur par défaut
-        }
+
+       public Payement1Model(IConfiguration configuration, UserManager<IdentityUser> userManager, RazorpayService razorpayService)
+{
+    _configuration = configuration;
+    _razorpayService = razorpayService;
+    _userManager = userManager;
+    Amount = 50.00M;
+    PhoneNumber = string.Empty;
+    UserEmail = string.Empty;
+}
 
         public async Task<IActionResult> OnGetAsync(decimal? total, string email, string phone)
         {
