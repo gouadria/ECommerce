@@ -13,24 +13,35 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up .NET Core
+      - name: Set up .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.x'
+          dotnet-version: '9.0.x'
 
-      - name: Build with dotnet
-        run: dotnet build ECommerce.csproj --configuration Release
+      - name: Restore dependencies
+        run: dotnet restore ./ECommerce/ECommerce.csproj
 
-      - name: dotnet publish
-        run: dotnet publish ECommerce.csproj -c Release -o publish
+      - name: Build project
+        run: dotnet build ./ECommerce/ECommerce.csproj --configuration Release --no-restore
 
-      - name: Upload artifact for deployment job
+      - name: Publish project as self-contained
+        run: |
+          dotnet publish ./ECommerce/ECommerce.csproj \
+            -c Release \
+            -o ./publish \
+            --self-contained true \
+            -r win-x86 \
+            /p:PublishSingleFile=true \
+            /p:IncludeAllContentForSelfExtract=true
+
+      - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
         with:
           name: net-app
-          path: publish
+          path: ./publish
 
   deploy:
     runs-on: windows-latest
@@ -43,13 +54,13 @@ jobs:
       contents: read
 
     steps:
-      - name: Download artifact from build job
+      - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: net-app
           path: ./net-app
 
-      - name: Login to Azure
+      - name: Azure Login
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_ADD88DF0C6384746AAD2B8F8A730192C }}
@@ -63,4 +74,3 @@ jobs:
           app-name: 'bayacommerce'
           slot-name: 'Production'
           package: ./net-app
-
