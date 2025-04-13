@@ -27,8 +27,8 @@ jobs:
       - name: Build project
         run: dotnet build ECommerce.csproj --configuration Release --no-restore
 
-      - name: Publish project as self-contained
-        run: dotnet publish ECommerce.csproj -c Release -o ./publish --self-contained true -r win-x86 /p:PublishSingleFile=true /p:IncludeAllContentForSelfExtract=true
+      - name: Publish project (framework-dependent)
+        run: dotnet publish ECommerce.csproj -c Release -o ./publish --no-build
 
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
