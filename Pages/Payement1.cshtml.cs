@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -11,7 +11,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace ECommerce.Pages
 {
-    [IgnoreAntiforgeryToken] // Désactive temporairement CSRF pour tester si le problème vient de là
+    [IgnoreAntiforgeryToken]
     [Route("/Payement1")]
     public class Payement1Model : PageModel
     {
@@ -23,16 +23,15 @@ namespace ECommerce.Pages
         [BindProperty] public string? PhoneNumber { get; set; }
         public string? UserEmail { get; set; }
 
-
-       public Payement1Model(IConfiguration configuration, UserManager<IdentityUser> userManager, RazorpayService razorpayService)
-{
-    _configuration = configuration;
-    _razorpayService = razorpayService;
-    _userManager = userManager;
-    Amount = 50.00M;
-    PhoneNumber = string.Empty;
-    UserEmail = string.Empty;
-}
+        public Payement1Model(IConfiguration configuration, UserManager<IdentityUser> userManager, RazorpayService razorpayService)
+        {
+            _configuration = configuration;
+            _razorpayService = razorpayService;
+            _userManager = userManager;
+            Amount = 50.00M;
+            PhoneNumber = string.Empty;  // ← initialisation pour éviter warning
+            UserEmail = string.Empty;
+        }
 
         public async Task<IActionResult> OnGetAsync(decimal? total, string email, string phone)
         {
@@ -50,6 +49,7 @@ namespace ECommerce.Pages
             PhoneNumber = phone;
 
             ViewData["RazorpayKey"] = _configuration["Razorpay:KeyId"];
+            await Task.CompletedTask; // ← Ajouté pour éviter le warning "async sans await"
             return Page();
         }
 
@@ -64,7 +64,6 @@ namespace ECommerce.Pages
 
             decimal amountInInr = ConvertSarToInr(paymentRequest.Amount);
             Console.WriteLine($"🛠 Requête reçue: {JsonSerializer.Serialize(paymentRequest)}");
-
 
             try
             {
@@ -97,10 +96,9 @@ namespace ECommerce.Pages
                     details = ex.Message
                 };
 
-                Response.ContentType = "application/json"; // 🔥 Forcer la réponse en JSON
+                Response.ContentType = "application/json";
                 return new JsonResult(errorResponse) { StatusCode = 500 };
             }
-
         }
 
         private decimal ConvertSarToInr(decimal amountInSar)
@@ -113,13 +111,11 @@ namespace ECommerce.Pages
     public class PaymentRequest
     {
         public decimal Amount { get; set; }
-        public string Email { get; set; }
+
+        [JsonPropertyName("email")]
+        public string Email { get; set; } = string.Empty; // ← initialisé pour éviter erreur nullable
+
         [JsonPropertyName("phone")]
-        public string PhoneNumber { get; set; }
+        public string PhoneNumber { get; set; } = string.Empty; // ← initialisé également
     }
 }
-
-
-
-
-
