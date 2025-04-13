@@ -14,11 +14,11 @@ namespace ECommerce.Models
 
         public int? Quantity { get; set; }
 
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
 
         public string? Status { get; set; }
 
-        public string PaymentId { get; set; }  // Changer le type pour string
+        public string? PaymentId { get; set; }  // Changer le type pour string
 
         public DateTime OrderDate { get; set; } = DateTime.UtcNow;
 
