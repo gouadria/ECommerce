@@ -17,13 +17,14 @@ namespace ECommerce.Models
         public RazorpayService(IConfiguration configuration, IHttpClientFactory httpClientFactory)
         {
             _httpClient = httpClientFactory.CreateClient();
-            _keyId = configuration["Razorpay:KeyId"];
-            _keySecret = configuration["Razorpay:KeySecret"];
+           _keyId = configuration["Razorpay:KeyId"]!;
+           _keySecret = configuration["Razorpay:KeySecret"]!;
+
 
             if (string.IsNullOrWhiteSpace(_keyId) || string.IsNullOrWhiteSpace(_keySecret))
-            {
-                throw new ArgumentNullException("Les clés API Razorpay ne sont pas configurées correctement.");
-            }
+{
+    throw new ArgumentNullException("Les clés API Razorpay ne sont pas configurées correctement.");
+}
 
             var authToken = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_keyId}:{_keySecret}"));
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authToken);
