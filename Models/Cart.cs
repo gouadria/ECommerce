@@ -12,24 +12,23 @@ namespace ECommerce.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int CartId { get; set; }  // Identifiant du panier
 
-        // Rendre UserId et User non-nullables, mais initialiser dans le constructeur si nécessaire
+        // Ces propriétés sont obligatoires et doivent être définies par l'appelant.
         [Required]
-        public string UserId { get; set; }  // Clé étrangère vers IdentityUser
+        public required string UserId { get; set; }  // Clé étrangère vers IdentityUser
 
         public DateTime CreatedDate { get; set; }
 
-        // Liste des produits dans le panier (relation avec Product)
-        public virtual List<CartProduct> CartProducts { get; set; }
+        // Initialisation de la collection pour éviter les références null.
+        public virtual List<CartProduct> CartProducts { get; set; } = new List<CartProduct>();
 
-        // Rendre User non-nullable et initialisé dans le constructeur
         [Required]
-        public virtual IdentityUser User { get; set; }
+        public required IdentityUser User { get; set; }
 
-        // Constructeur pour initialiser les propriétés
+        // Aucun besoin d'initialiser User ou UserId dans le constructeur ici,
+        // car ils sont marqués "required" et doivent être fournis lors de l'instanciation.
         public Cart()
         {
-            // Initialisation explicite de la liste pour éviter les problèmes de nullité
-            CartProducts = new List<CartProduct>();
+            // CartProducts est déjà initialisé.
         }
     }
 
@@ -39,30 +38,27 @@ namespace ECommerce.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int CartProductId { get; set; }
         
-        // Assurez-vous que CartId et ProductId ne sont pas nulls
         [Required]
         public int CartId { get; set; }
 
         [Required]
         public int ProductId { get; set; }
 
-        // ProductName est maintenant non-nullable avec une valeur par défaut si nécessaire
         [Required]
-        public string ProductName { get; set; }
+        public required string ProductName { get; set; }
 
         public int Quantity { get; set; } // Stockage de la quantité ici
 
-        // Relations
-        [Required]  // Cette annotation garantit que Cart ne peut pas être null
-        public virtual Cart Cart { get; set; }
+        [Required]
+        public required Cart Cart { get; set; }
 
-        [Required]  // Cette annotation garantit que Product ne peut pas être null
-        public virtual Product Product { get; set; }
+        [Required]
+        public required Product Product { get; set; }
 
-        // Constructeur pour garantir que les propriétés non-nullables sont initialisées
+        // Initialisation optionnelle de ProductName pour fournir une valeur par défaut.
         public CartProduct()
         {
-            ProductName = string.Empty;  // Initialisation à une valeur par défaut si nécessaire
+            ProductName = string.Empty;
         }
     }
 }
