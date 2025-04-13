@@ -5,7 +5,7 @@ namespace ECommerce.Models
 {
     public class Payment
     {
-        public string PaymentId { get; set; } // Identifiant unique pour le paiement
+        public required string PaymentId { get; set; } // Identifiant unique pour le paiement
 
         // Informations sur le paiement spécifique (carte bancaire)
         public string? Name { get; set; } // Nom du titulaire de la carte
