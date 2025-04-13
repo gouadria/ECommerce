@@ -51,10 +51,10 @@ namespace ECommerce.Models
         public int Quantity { get; set; }
 
         // Propriétés de navigation rendues nullable pour être auto-remplies par EF Core
-        [Required]
+        
         public virtual Cart? Cart { get; set; }
 
-        [Required]
+    
         public virtual Product? Product { get; set; }
     }
 }
