@@ -18,7 +18,6 @@ public class SuccessModel : PageModel
         _userManager = userManager;
     }
 
-    // Modifié pour être nullable
     public int? OrderId { get; set; }
 
     public async Task<IActionResult> OnGetAsync(string token, string payerId)
@@ -46,7 +45,6 @@ public class SuccessModel : PageModel
             return RedirectToPage("/Error");
         }
 
-        // Récupérer le dernier panier
         var lastCart = await _context.Carts
             .Where(c => c.UserId == userId)
             .OrderByDescending(c => c.CreatedDate)
@@ -66,25 +64,24 @@ public class SuccessModel : PageModel
         try
         {
             var uniquePaymentId = Guid.NewGuid().ToString();
-            // Créer un paiement avec payerId comme PaymentId
+
             var payment = new Payment
             {
-                PaymentId = uniquePaymentId, // Utilisation de payerId comme PaymentId
-                Name = "Client Name", // Remplacer par le nom réel du client
-                CardNo = "1234567890123456", // Remplacer par le numéro de carte réel (en masquant si nécessaire)
-                ExpiryDate = "12/25", // Remplacer par la date d'expiration réelle
-                CvvNo = 123, // Remplacer par le CVV réel (en masquant si nécessaire)
-                Address = "Client Address", // Remplacer par l'adresse réelle
-                PaymentMode = "CreditCard", // ou "PayPal", selon le mode de paiement utilisé
+                PaymentId = uniquePaymentId,
+                Name = "Client Name",
+                CardNo = "1234567890123456",
+                ExpiryDate = "12/25",
+                CvvNo = 123,
+                Address = "Client Address",
+                PaymentMode = "CreditCard"
             };
 
             _context.Payments.Add(payment);
             await _context.SaveChangesAsync();
-            Console.WriteLine($"Payment created for PaymentId {payerId}");
+            Console.WriteLine($"Payment created for PaymentId {uniquePaymentId}");
 
-            // Générer un numéro de commande unique
             int orderNo = new Random().Next(100000, 999999);
-            Order firstOrder = null;
+            Order? firstOrder = null;
 
             foreach (var cartProduct in lastCart.CartProducts)
             {
@@ -95,7 +92,7 @@ public class SuccessModel : PageModel
                     Quantity = cartProduct.Quantity,
                     UserId = userId,
                     Status = "Paid",
-                    PaymentId = uniquePaymentId,  // Utilisation du payerId comme PaymentId
+                    PaymentId = uniquePaymentId,
                     OrderDate = DateTime.UtcNow,
                     IsConcel = false
                 };
@@ -111,17 +108,12 @@ public class SuccessModel : PageModel
 
             await _context.SaveChangesAsync();
 
-            // Vérification que firstOrder n'est pas null avant d'assigner OrderId
             if (firstOrder != null)
-               if (firstOrder != null)
-                {
-                  OrderId = firstOrder!.OrderId;
-                  Console.WriteLine($"First OrderId assigned: {OrderId}");
-                 }
+            {
+                OrderId = firstOrder.OrderId;
+                Console.WriteLine($"First OrderId assigned: {OrderId}");
+            }
 
-
-
-            // Vider le panier après validation
             Console.WriteLine($"Removing cart: {lastCart.CartId}");
             _context.Carts.Remove(lastCart);
             await _context.SaveChangesAsync();
@@ -137,4 +129,3 @@ public class SuccessModel : PageModel
         }
     }
 }
-
