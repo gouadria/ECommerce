@@ -12,12 +12,17 @@ namespace ECommerce.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int CartId { get; set; }  // Identifiant du panier
 
+        // Rendre UserId et User non-nullables
+        [Required] // Cette annotation garantit que UserId ne peut pas être null
         public string UserId { get; set; }  // Clé étrangère vers IdentityUser
+
         public DateTime CreatedDate { get; set; }
 
         // Liste des produits dans le panier (relation avec Product)
         public virtual List<CartProduct> CartProducts { get; set; } = new List<CartProduct>();
 
+        // Rendre User non-nullable
+        [Required]
         public virtual IdentityUser User { get; set; }
 
         // Constructeur pour garantir que les propriétés non-nullables sont initialisées
@@ -34,16 +39,20 @@ namespace ECommerce.Models
         public int CartProductId { get; set; }
         public int CartId { get; set; }
 
-        // Propriété ProductName rendue nullable pour éviter l'erreur de non-nullabilité
-        public string? ProductName { get; set; }  // Nullable
+        // Rendre ProductName non-nullable
+        [Required]  // Cette annotation garantit que ProductName ne peut pas être null
+        public string ProductName { get; set; }
 
         public int ProductId { get; set; }
 
         public int Quantity { get; set; } // Stockage de la quantité ici
 
         // Relations
-        public virtual Cart Cart { get; set; }  // Rendre Cart nullable si nécessaire
-        public virtual Product? Product { get; set; }  // Rendre Product nullable si nécessaire
+        [Required]  // Cette annotation garantit que Cart ne peut pas être null
+        public virtual Cart Cart { get; set; }
+
+        [Required]  // Cette annotation garantit que Product ne peut pas être null
+        public virtual Product Product { get; set; }
 
         // Constructeur pour garantir que les propriétés non-nullables sont initialisées
         public CartProduct()
@@ -52,4 +61,3 @@ namespace ECommerce.Models
         }
     }
 }
-
