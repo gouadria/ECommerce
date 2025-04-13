@@ -14,7 +14,7 @@ public class PayPalService
     public async Task<string> CreatePayPalOrderAsync(decimal amount, string email, string phone)
     {
         var accessToken = await GetAccessTokenAsync();
-        if (string.IsNullOrEmpty(accessToken))
+        if (string.IsNullOrWhiteSpace(accessToken))
         {
             return "Erreur: impossible d'obtenir le token d'accès.";
         }
@@ -67,60 +67,61 @@ public class PayPalService
 
         var content = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
 
-       try
-{
-    var response = await client.PostAsync("https://api-m.sandbox.paypal.com/v2/checkout/orders", content);
-
-    if (response.IsSuccessStatusCode)
-    {
-        var result = await response.Content.ReadAsStringAsync();
-        dynamic jsonResponse = JsonConvert.DeserializeObject(result);
-        IEnumerable<dynamic>? links = jsonResponse?.links;
-
-        if (links != null)
+        try
         {
-            string approvalUrl = links.ElementAtOrDefault(1)?.href ?? "Erreur: L'URL d'approbation PayPal est manquante.";
-            return approvalUrl;
+            var response = await client.PostAsync("https://api-m.sandbox.paypal.com/v2/checkout/orders", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadAsStringAsync();
+                dynamic? jsonResponse = JsonConvert.DeserializeObject(result);
+                IEnumerable<dynamic>? links = jsonResponse?.links;
+
+                if (links != null)
+                {
+                    var approvalUrl = links.ElementAtOrDefault(1)?.href?.ToString();
+                    return !string.IsNullOrEmpty(approvalUrl)
+                        ? approvalUrl
+                        : "Erreur: L'URL d'approbation PayPal est manquante.";
+                }
+                else
+                {
+                    return "Erreur: Les liens de la réponse PayPal sont manquants.";
+                }
+            }
+            else
+            {
+                return $"Erreur PayPal: {response.StatusCode}";
+            }
         }
-        else
+        catch (Exception ex)
         {
-            return "Erreur: Les liens de la réponse PayPal sont manquants.";
+            return $"Erreur lors de la communication avec l'API PayPal: {ex.Message}";
         }
     }
-    else
+
+    private async Task<string> GetAccessTokenAsync()
     {
-        return $"Erreur PayPal: {response.StatusCode}";
+        using var client = new HttpClient();
+        var byteArray = new UTF8Encoding().GetBytes($"{clientId}:{clientSecret}");
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
+
+        var content = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("grant_type", "client_credentials")
+        });
+
+        var response = await client.PostAsync("https://api.sandbox.paypal.com/v1/oauth2/token", content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var result = await response.Content.ReadAsStringAsync();
+            dynamic? jsonResponse = JsonConvert.DeserializeObject(result);
+            string? token = jsonResponse?.access_token;
+
+            return token ?? string.Empty;
+        }
+
+        return string.Empty;
     }
-}
-catch (Exception ex)
-{
-    return $"Erreur lors de la communication avec l'API PayPal: {ex.Message}";
-}
-
-    }
-
-   private async Task<string> GetAccessTokenAsync()
-{
-    using var client = new HttpClient();
-    var byteArray = new UTF8Encoding().GetBytes($"{clientId}:{clientSecret}");
-    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
-
-    var content = new FormUrlEncodedContent(new[]
-    {
-        new KeyValuePair<string, string>("grant_type", "client_credentials")
-    });
-
-    var response = await client.PostAsync("https://api.sandbox.paypal.com/v1/oauth2/token", content);
-
-    if (response.IsSuccessStatusCode)
-    {
-        var result = await response.Content.ReadAsStringAsync();
-        dynamic jsonResponse = JsonConvert.DeserializeObject(result);
-        string token = jsonResponse?.access_token ?? string.Empty;
-        return token;
-    }
-
-    return string.Empty;
-}
-
 }
