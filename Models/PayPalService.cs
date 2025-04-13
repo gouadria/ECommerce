@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using System.Net.Http.Headers;
 
 public class PayPalService
 {
@@ -13,14 +14,14 @@ public class PayPalService
 
     public async Task<string> CreatePayPalOrderAsync(decimal amount, string email, string phone)
     {
-        var accessToken = await GetAccessTokenAsync();
+        string accessToken = await GetAccessTokenAsync();
         if (string.IsNullOrWhiteSpace(accessToken))
         {
             return "Erreur: impossible d'obtenir le token d'accès.";
         }
 
         using var client = new HttpClient();
-        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         string amountString = amount.ToString("F2").Replace(',', '.');
 
         var data = new
@@ -74,20 +75,21 @@ public class PayPalService
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadAsStringAsync();
-                dynamic? jsonResponse = JsonConvert.DeserializeObject(result);
-                IEnumerable<dynamic>? links = jsonResponse?.links;
+                dynamic jsonResponse = JsonConvert.DeserializeObject(result);
 
-                if (links != null)
+                if (jsonResponse?.links != null)
                 {
-                    var approvalUrl = links.ElementAtOrDefault(1)?.href?.ToString();
-                    return !string.IsNullOrEmpty(approvalUrl)
-                        ? approvalUrl
-                        : "Erreur: L'URL d'approbation PayPal est manquante.";
+                    foreach (var link in jsonResponse.links)
+                    {
+                        if (link?.rel == "approve")
+                        {
+                            return link.href.ToString();
+                        }
+                    }
+                    return "Erreur: L'URL d'approbation PayPal est manquante.";
                 }
-                else
-                {
-                    return "Erreur: Les liens de la réponse PayPal sont manquants.";
-                }
+
+                return "Erreur: Les liens de la réponse PayPal sont manquants.";
             }
             else
             {
@@ -103,25 +105,35 @@ public class PayPalService
     private async Task<string> GetAccessTokenAsync()
     {
         using var client = new HttpClient();
-        var byteArray = new UTF8Encoding().GetBytes($"{clientId}:{clientSecret}");
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
+        var byteArray = Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
 
         var content = new FormUrlEncodedContent(new[]
         {
             new KeyValuePair<string, string>("grant_type", "client_credentials")
         });
 
-        var response = await client.PostAsync("https://api.sandbox.paypal.com/v1/oauth2/token", content);
-
-        if (response.IsSuccessStatusCode)
+        try
         {
-            var result = await response.Content.ReadAsStringAsync();
-            dynamic? jsonResponse = JsonConvert.DeserializeObject(result);
-            string? token = jsonResponse?.access_token;
+            var response = await client.PostAsync("https://api.sandbox.paypal.com/v1/oauth2/token", content);
 
-            return token ?? string.Empty;
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadAsStringAsync();
+                dynamic jsonResponse = JsonConvert.DeserializeObject(result);
+
+                string token = jsonResponse?.access_token;
+                return token ?? string.Empty;
+            }
+            else
+            {
+                return string.Empty;
+            }
         }
-
-        return string.Empty;
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur lors de l'obtention du token d'accès PayPal : {ex.Message}");
+            return string.Empty;
+        }
     }
 }
