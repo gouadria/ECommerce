@@ -8,29 +8,40 @@ using Microsoft.AspNetCore.Authorization;
 using ECommerce.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Serilog;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using System.Security.Principal;
 using Microsoft.AspNetCore.Identity.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuration du logging avec Serilog
-builder.Host.UseSerilog((context, services, configuration) => configuration
-    .ReadFrom.Configuration(context.Configuration)
-    .ReadFrom.Services(services)
-    .Enrich.FromLogContext()
-    .WriteTo.Console()
-    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day));
+// 🔒 Configuration du logging avec Serilog
+builder.Host.UseSerilog((context, services, configuration) =>
+{
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .WriteTo.Console()
+        .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
+});
 
-// Configuration de la base de données
+// 🔐 Configuration de Kestrel pour production
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(80); // HTTP (optionnel si derrière un reverse proxy)
+    serverOptions.ListenAnyIP(443, listenOptions =>
+    {
+        listenOptions.UseHttps("certificat.pfx", "votre_mot_de_passe"); // À remplacer avec votre certificat
+    });
+});
+
+// 🔧 Connexion à la base de données
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<EcommerceDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-// Configuration de l'authentification et des utilisateurs Identity
+// ⚙️ Configuration d'Identity
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
@@ -40,6 +51,7 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 
 builder.Services.AddRazorPages();
 
+// 🔒 Options de sécurité Identity
 builder.Services.Configure<IdentityOptions>(options =>
 {
     options.Password.RequireDigit = true;
@@ -61,33 +73,32 @@ builder.Services.Configure<IdentityOptions>(options =>
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
-
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
     options.LoginPath = "/Identity/Account/Login";
     options.LogoutPath = "/Identity/Account/Logout";
     options.AccessDeniedPath = "/Identity/Account/AccessDenied";
     options.SlidingExpiration = true;
 });
 
-// Ajout des services personnalisés
+// 📦 Services personnalisés
 builder.Services.AddSingleton<PayPalService>();
 builder.Services.AddSingleton<RazorpayService>();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<ZohoTokenService>();
 builder.Services.AddScoped<ZohoEmailService>();
 
-// Handlers pour l'autorisation
+// 🔐 Authorization handlers
 builder.Services.AddScoped<IAuthorizationHandler, ContactIsOwnerAuthorizationHandler>();
 builder.Services.AddSingleton<IAuthorizationHandler, ContactAdministratorsAuthorizationHandler>();
 builder.Services.AddSingleton<IAuthorizationHandler, ContactManagerAuthorizationHandler>();
 
-// Redirection HTTPS configurée pour la production (port 443)
+// ➕ HTTPS Redirection
 builder.Services.AddHttpsRedirection(options =>
 {
     options.HttpsPort = 443;
 });
 
-// Ajout du cache mémoire pour la session
+// 💾 Cache et session
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -98,17 +109,17 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
-// Application des migrations + seed des données
+// 🔁 Migration + Seed
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var context = services.GetRequiredService<EcommerceDbContext>();
-        context.Database.Migrate(); // Appliquer les migrations
+        context.Database.Migrate();
 
         var testUserPw = builder.Configuration.GetValue<string>("SeedUserPW");
-        await SeedData.Initialize(services, testUserPw); // Données de seed
+        await SeedData.Initialize(services, testUserPw);
     }
     catch (Exception ex)
     {
@@ -116,7 +127,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Middlewares
+// 🔀 Middlewares
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -124,12 +135,11 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Error");
-    app.UseHsts(); // Active le Strict-Transport-Security
+    app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
 app.UseSession();
 
@@ -138,7 +148,7 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 
-// Démarrage sécurisé avec log
+// 🚀 Démarrage sécurisé
 try
 {
     Log.Information("Démarrage de l'application...");
