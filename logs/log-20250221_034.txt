@@ -1,5 +1,0 @@
-2025-02-21 22:37:04.555 +01:00 [INF] Connexion réussie.
-2025-02-21 22:37:52.523 +01:00 [WRN] Unable to configure Browser Link script injection on the response. 
-2025-02-21 22:37:52.524 +01:00 [WRN] Unable to configure browser refresh script injection on the response. Consider manually adding '<script src="/_framework/aspnetcore-browser-refresh.js"></script>' to the body of the page.
-2025-02-21 22:38:05.215 +01:00 [WRN] Unable to configure Browser Link script injection on the response. 
-2025-02-21 22:38:05.216 +01:00 [WRN] Unable to configure browser refresh script injection on the response. Consider manually adding '<script src="/_framework/aspnetcore-browser-refresh.js"></script>' to the body of the page.

@@ -687,7 +687,7 @@
           }
         }
       },
-      "jQuery/1.4.4": {
+      "jQuery/3.6.0": {
         "type": "package"
       },
       "jQuery.Validation/1.21.0": {
@@ -2519,7 +2519,7 @@
           "lib/netstandard1.0/_._": {}
         }
       },
-      "Microsoft.NETCore.Targets/1.1.0": {
+      "Microsoft.NETCore.Targets/1.1.3": {
         "type": "package",
         "compile": {
           "lib/netstandard1.0/_._": {}
@@ -2962,15 +2962,15 @@
           "lib/netstandard2.0/NuGet.Versioning.dll": {}
         }
       },
-      "RestSharp/108.0.0": {
+      "RestSharp/109.0.0": {
         "type": "package",
         "compile": {
-          "lib/net6.0/RestSharp.dll": {
+          "lib/net7.0/RestSharp.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/net6.0/RestSharp.dll": {
+          "lib/net7.0/RestSharp.dll": {
             "related": ".xml"
           }
         }
@@ -3667,11 +3667,11 @@
           }
         }
       },
-      "System.Runtime/4.3.0": {
+      "System.Runtime/4.3.1": {
         "type": "package",
         "dependencies": {
-          "Microsoft.NETCore.Platforms": "1.1.0",
-          "Microsoft.NETCore.Targets": "1.1.0"
+          "Microsoft.NETCore.Platforms": "1.1.1",
+          "Microsoft.NETCore.Targets": "1.1.3"
         },
         "compile": {
           "ref/netstandard1.5/System.Runtime.dll": {
@@ -3803,18 +3803,18 @@
           }
         }
       },
-      "System.Security.Cryptography.Pkcs/7.0.0": {
+      "System.Security.Cryptography.Pkcs/8.0.0": {
         "type": "package",
         "dependencies": {
-          "System.Formats.Asn1": "7.0.0"
+          "System.Formats.Asn1": "8.0.0"
         },
         "compile": {
-          "lib/net7.0/System.Security.Cryptography.Pkcs.dll": {
+          "lib/net8.0/System.Security.Cryptography.Pkcs.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/net7.0/System.Security.Cryptography.Pkcs.dll": {
+          "lib/net8.0/System.Security.Cryptography.Pkcs.dll": {
             "related": ".xml"
           }
         },
@@ -3822,7 +3822,7 @@
           "buildTransitive/net6.0/_._": {}
         },
         "runtimeTargets": {
-          "runtimes/win/lib/net7.0/System.Security.Cryptography.Pkcs.dll": {
+          "runtimes/win/lib/net8.0/System.Security.Cryptography.Pkcs.dll": {
             "assetType": "runtime",
             "rid": "win"
           }
@@ -3979,13 +3979,13 @@
           "buildTransitive/net8.0/System.Text.Json.targets": {}
         }
       },
-      "System.Text.RegularExpressions/4.3.0": {
+      "System.Text.RegularExpressions/4.3.1": {
         "type": "package",
         "dependencies": {
-          "System.Runtime": "4.3.0"
+          "System.Runtime": "4.3.1"
         },
         "compile": {
-          "ref/netcoreapp1.1/_._": {}
+          "ref/netcoreapp1.1/System.Text.RegularExpressions.dll": {}
         },
         "runtime": {
           "lib/netstandard1.6/System.Text.RegularExpressions.dll": {}
@@ -5004,17 +5004,26 @@
         "logo.png"
       ]
     },
-    "jQuery/1.4.4": {
-      "sha512": "kexCeYIZehR5fRjo8CK1sngN5SZEQRFNfCYZHMS1RxwEEiSKetBw/gliYJcLJdJEBB+e9aHqleLCjuaSI7u23g==",
+    "jQuery/3.6.0": {
+      "sha512": "sSzCTDWn15waSMjDrP21jjgG1j1pwISLaKiVCClwU4XGAmuZt+FScLkdyRvh9ppoIxAW/tJtJBYei+3CAwFQ7g==",
       "type": "package",
-      "path": "jquery/1.4.4",
+      "path": "jquery/3.6.0",
+      "hasTools": true,
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "Content/Scripts/jquery-1.4.4-vsdoc.js",
-        "Content/Scripts/jquery-1.4.4.js",
-        "Content/Scripts/jquery-1.4.4.min.js",
-        "jquery.1.4.4.nupkg.sha512",
+        "Content/Scripts/jquery-3.6.0-vsdoc.js",
+        "Content/Scripts/jquery-3.6.0.js",
+        "Content/Scripts/jquery-3.6.0.min.js",
+        "Content/Scripts/jquery-3.6.0.min.map",
+        "Content/Scripts/jquery-3.6.0.slim.js",
+        "Content/Scripts/jquery-3.6.0.slim.min.js",
+        "Content/Scripts/jquery-3.6.0.slim.min.map",
+        "Tools/common.ps1",
+        "Tools/install.ps1",
+        "Tools/jquery-3.6.0.intellisense.js",
+        "Tools/uninstall.ps1",
+        "jquery.3.6.0.nupkg.sha512",
         "jquery.nuspec"
       ]
     },
@@ -7884,17 +7893,17 @@
         "version.txt"
       ]
     },
-    "Microsoft.NETCore.Targets/1.1.0": {
-      "sha512": "aOZA3BWfz9RXjpzt0sRJJMjAscAUm3Hoa4UWAfceV9UTYxgwZ1lZt5nO2myFf+/jetYQo4uTP7zS8sJY67BBxg==",
+    "Microsoft.NETCore.Targets/1.1.3": {
+      "sha512": "3Wrmi0kJDzClwAC+iBdUBpEKmEle8FQNsCs77fkiOIw/9oYA07bL1EZNX0kQ2OMN3xpwvl0vAtOCYY3ndDNlhQ==",
       "type": "package",
-      "path": "microsoft.netcore.targets/1.1.0",
+      "path": "microsoft.netcore.targets/1.1.3",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "ThirdPartyNotices.txt",
         "dotnet_library_license.txt",
         "lib/netstandard1.0/_._",
-        "microsoft.netcore.targets.1.1.0.nupkg.sha512",
+        "microsoft.netcore.targets.1.1.3.nupkg.sha512",
         "microsoft.netcore.targets.nuspec",
         "runtime.json"
       ]
@@ -8672,20 +8681,22 @@
         "nuget.versioning.nuspec"
       ]
     },
-    "RestSharp/108.0.0": {
-      "sha512": "cKWm/SoZ/RGzfDbdhn5YkpR0ZBfoJLJ8S9cdjQwHFqPN1TDQGXbpbC8Olp0OlExazaBqyWyVPv4zHEpcnRF/NA==",
+    "RestSharp/109.0.0": {
+      "sha512": "hWb1vbwfTt7AS4kYTAF9++8pdc4XqjDywliIIvE/IP5TINneKvX9zZJgzbRkjFogUF83aBcH/0KUsNtTJzUuvQ==",
       "type": "package",
-      "path": "restsharp/108.0.0",
+      "path": "restsharp/109.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "lib/net5.0/RestSharp.dll",
-        "lib/net5.0/RestSharp.xml",
+        "lib/net471/RestSharp.dll",
+        "lib/net471/RestSharp.xml",
         "lib/net6.0/RestSharp.dll",
         "lib/net6.0/RestSharp.xml",
+        "lib/net7.0/RestSharp.dll",
+        "lib/net7.0/RestSharp.xml",
         "lib/netstandard2.0/RestSharp.dll",
         "lib/netstandard2.0/RestSharp.xml",
-        "restsharp.108.0.0.nupkg.sha512",
+        "restsharp.109.0.0.nupkg.sha512",
         "restsharp.nuspec",
         "restsharp.png"
       ]
@@ -10116,10 +10127,10 @@
         "system.resources.resourcemanager.nuspec"
       ]
     },
-    "System.Runtime/4.3.0": {
-      "sha512": "JufQi0vPQ0xGnAczR13AUFglDyVYt4Kqnz1AZaiKZ5+GICq0/1MH/mO/eAJHt/mHW1zjKBJd7kV26SrxddAhiw==",
+    "System.Runtime/4.3.1": {
+      "sha512": "abhfv1dTK6NXOmu4bgHIONxHyEqFjW8HwXPmpY9gmll+ix9UNo4XDcmzJn6oLooftxNssVHdJC1pGT9jkSynQg==",
       "type": "package",
-      "path": "system.runtime/4.3.0",
+      "path": "system.runtime/4.3.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -10204,7 +10215,7 @@
         "ref/xamarinmac20/_._",
         "ref/xamarintvos10/_._",
         "ref/xamarinwatchos10/_._",
-        "system.runtime.4.3.0.nupkg.sha512",
+        "system.runtime.4.3.1.nupkg.sha512",
         "system.runtime.nuspec"
       ]
     },
@@ -10605,10 +10616,10 @@
         "version.txt"
       ]
     },
-    "System.Security.Cryptography.Pkcs/7.0.0": {
-      "sha512": "mjUbEXkR6DYRef6dnEYKdfec9otcAkibExL+1f9hmbGlWIUyaCnS3Y3oGZEet38waXmuY1ORE8vgv4sgD5nMYg==",
+    "System.Security.Cryptography.Pkcs/8.0.0": {
+      "sha512": "ULmp3xoOwNYjOYp4JZ2NK/6NdTgiN1GQXzVVN1njQ7LOZ0d0B9vyMnhyqbIi9Qw4JXj1JgCsitkTShboHRx7Eg==",
       "type": "package",
-      "path": "system.security.cryptography.pkcs/7.0.0",
+      "path": "system.security.cryptography.pkcs/8.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -10625,6 +10636,8 @@
         "lib/net6.0/System.Security.Cryptography.Pkcs.xml",
         "lib/net7.0/System.Security.Cryptography.Pkcs.dll",
         "lib/net7.0/System.Security.Cryptography.Pkcs.xml",
+        "lib/net8.0/System.Security.Cryptography.Pkcs.dll",
+        "lib/net8.0/System.Security.Cryptography.Pkcs.xml",
         "lib/netstandard2.0/System.Security.Cryptography.Pkcs.dll",
         "lib/netstandard2.0/System.Security.Cryptography.Pkcs.xml",
         "lib/netstandard2.1/System.Security.Cryptography.Pkcs.dll",
@@ -10633,7 +10646,9 @@
         "runtimes/win/lib/net6.0/System.Security.Cryptography.Pkcs.xml",
         "runtimes/win/lib/net7.0/System.Security.Cryptography.Pkcs.dll",
         "runtimes/win/lib/net7.0/System.Security.Cryptography.Pkcs.xml",
-        "system.security.cryptography.pkcs.7.0.0.nupkg.sha512",
+        "runtimes/win/lib/net8.0/System.Security.Cryptography.Pkcs.dll",
+        "runtimes/win/lib/net8.0/System.Security.Cryptography.Pkcs.xml",
+        "system.security.cryptography.pkcs.8.0.0.nupkg.sha512",
         "system.security.cryptography.pkcs.nuspec",
         "useSharedDesignerContext.txt"
       ]
@@ -11029,10 +11044,10 @@
         "useSharedDesignerContext.txt"
       ]
     },
-    "System.Text.RegularExpressions/4.3.0": {
-      "sha512": "RpT2DA+L660cBt1FssIE9CAGpLFdFPuheB7pLpKpn6ZXNby7jDERe8Ua/Ne2xGiwLVG2JOqziiaVCGDon5sKFA==",
+    "System.Text.RegularExpressions/4.3.1": {
+      "sha512": "N0kNRrWe4+nXOWlpLT4LAY5brb8caNFlUuIRpraCVMDLYutKkol1aV079rQjLuSxKMJT2SpBQsYX9xbcTMmzwg==",
       "type": "package",
-      "path": "system.text.regularexpressions/4.3.0",
+      "path": "system.text.regularexpressions/4.3.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -11109,7 +11124,7 @@
         "ref/xamarinmac20/_._",
         "ref/xamarintvos10/_._",
         "ref/xamarinwatchos10/_._",
-        "system.text.regularexpressions.4.3.0.nupkg.sha512",
+        "system.text.regularexpressions.4.3.1.nupkg.sha512",
         "system.text.regularexpressions.nuspec"
       ]
     },
@@ -11555,14 +11570,17 @@
       "Microsoft.Extensions.Logging.Console >= 9.0.0",
       "Microsoft.VisualStudio.Web.CodeGeneration.Design >= 9.0.0",
       "Newtonsoft.Json >= 13.0.3",
-      "RestSharp >= 108.0.0",
+      "RestSharp >= 108.1.0",
       "Serilog >= 4.2.0",
       "Serilog.AspNetCore >= 9.0.0",
       "Serilog.Extensions.Logging >= 9.0.0",
       "Serilog.Sinks.Console >= 6.0.0",
       "Serilog.Sinks.File >= 6.0.0",
       "System.Drawing.Common >= 7.0.0",
+      "System.Security.Cryptography.Pkcs >= 7.1.0",
       "System.Security.Cryptography.Xml >= 7.0.0",
+      "System.Text.RegularExpressions >= 4.3.1",
+      "jQuery >= 3.6.0",
       "jQuery.Validation >= 1.21.0",
       "jQuery.Validation.Unobtrusive >= 2.0.20710"
     ]
@@ -11574,11 +11592,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\User\\Documents\\ECommerce\\ECommerce\\ECommerce.csproj",
+      "projectUniqueName": "C:\\Users\\User\\Documents\\ECommerce-1\\ECommerce.csproj",
       "projectName": "ECommerce",
-      "projectPath": "C:\\Users\\User\\Documents\\ECommerce\\ECommerce\\ECommerce.csproj",
+      "projectPath": "C:\\Users\\User\\Documents\\ECommerce-1\\ECommerce.csproj",
       "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\User\\Documents\\ECommerce\\ECommerce\\obj\\",
+      "outputPath": "C:\\Users\\User\\Documents\\ECommerce-1\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -11683,7 +11701,7 @@
           },
           "RestSharp": {
             "target": "Package",
-            "version": "[108.0.0, )"
+            "version": "[108.1.0, )"
           },
           "Serilog": {
             "target": "Package",
@@ -11709,9 +11727,21 @@
             "target": "Package",
             "version": "[7.0.0, )"
           },
+          "System.Security.Cryptography.Pkcs": {
+            "target": "Package",
+            "version": "[7.1.0, )"
+          },
           "System.Security.Cryptography.Xml": {
             "target": "Package",
             "version": "[7.0.0, )"
+          },
+          "System.Text.RegularExpressions": {
+            "target": "Package",
+            "version": "[4.3.1, )"
+          },
+          "jQuery": {
+            "target": "Package",
+            "version": "[3.6.0, )"
           },
           "jQuery.Validation": {
             "target": "Package",
@@ -11750,108 +11780,38 @@
       "code": "NU1603",
       "level": "Warning",
       "warningLevel": 1,
-      "message": "jQuery.Validation.Unobtrusive 2.0.20710 depends on Microsoft.jQuery.Unobtrusive.Validation (>= 2.0.20613) but Microsoft.jQuery.Unobtrusive.Validation 2.0.20613 was not found. Microsoft.jQuery.Unobtrusive.Validation 2.0.20710 was resolved instead.",
+      "message": "jQuery.Validation.Unobtrusive 2.0.20710 dépend de Microsoft.jQuery.Unobtrusive.Validation (>= 2.0.20613) mais Microsoft.jQuery.Unobtrusive.Validation 2.0.20613 est introuvable. Microsoft.jQuery.Unobtrusive.Validation 2.0.20710 a été résolu à la place.",
       "libraryId": "Microsoft.jQuery.Unobtrusive.Validation",
       "targetGraphs": [
         "net9.0"
       ]
     },
     {
-      "code": "NU1902",
+      "code": "NU1603",
       "level": "Warning",
       "warningLevel": 1,
-      "message": "Package 'jQuery' 1.4.4 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-2pqj-h3vj-pqgw",
-      "libraryId": "jQuery",
-      "targetGraphs": [
-        "net9.0"
-      ]
-    },
-    {
-      "code": "NU1902",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'jQuery' 1.4.4 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-579v-mp3v-rrw5",
-      "libraryId": "jQuery",
-      "targetGraphs": [
-        "net9.0"
-      ]
-    },
-    {
-      "code": "NU1902",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'jQuery' 1.4.4 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-6c3j-c64m-qhgq",
-      "libraryId": "jQuery",
-      "targetGraphs": [
-        "net9.0"
-      ]
-    },
-    {
-      "code": "NU1902",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'jQuery' 1.4.4 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-gxr4-xjj5-5px2",
-      "libraryId": "jQuery",
-      "targetGraphs": [
-        "net9.0"
-      ]
-    },
-    {
-      "code": "NU1902",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'jQuery' 1.4.4 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-jpcq-cgw6-v4j6",
-      "libraryId": "jQuery",
-      "targetGraphs": [
-        "net9.0"
-      ]
-    },
-    {
-      "code": "NU1902",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'jQuery' 1.4.4 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-q4m3-2j7h-f7xw",
-      "libraryId": "jQuery",
-      "targetGraphs": [
-        "net9.0"
-      ]
-    },
-    {
-      "code": "NU1902",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'jQuery' 1.4.4 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-rmxg-73gg-4p98",
-      "libraryId": "jQuery",
-      "targetGraphs": [
-        "net9.0"
-      ]
-    },
-    {
-      "code": "NU1902",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'RestSharp' 108.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-4rr6-2v9v-wcpc",
+      "message": "ECommerce dépend de RestSharp (>= 108.1.0) mais RestSharp 108.1.0 est introuvable. RestSharp 109.0.0 a été résolu à la place.",
       "libraryId": "RestSharp",
       "targetGraphs": [
         "net9.0"
       ]
     },
     {
-      "code": "NU1903",
+      "code": "NU1603",
       "level": "Warning",
       "warningLevel": 1,
-      "message": "Package 'System.Security.Cryptography.Pkcs' 7.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-555c-2p6r-68mm",
+      "message": "ECommerce dépend de System.Security.Cryptography.Pkcs (>= 7.1.0) mais System.Security.Cryptography.Pkcs 7.1.0 est introuvable. System.Security.Cryptography.Pkcs 8.0.0 a été résolu à la place.",
       "libraryId": "System.Security.Cryptography.Pkcs",
       "targetGraphs": [
         "net9.0"
       ]
     },
     {
-      "code": "NU1903",
+      "code": "NU1902",
       "level": "Warning",
       "warningLevel": 1,
-      "message": "Package 'System.Text.RegularExpressions' 4.3.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-cmhx-cq75-c4mj",
-      "libraryId": "System.Text.RegularExpressions",
+      "message": "Le package 'RestSharp' 109.0.0 présente une vulnérabilité de gravité moyenne connue, https://github.com/advisories/GHSA-4rr6-2v9v-wcpc.",
+      "libraryId": "RestSharp",
       "targetGraphs": [
         "net9.0"
       ]

@@ -56,8 +56,24 @@
     <h2>Facture - Someg</h2>
 
     <div class="invoice-details">
-        <p><strong>Numéro de commande :</strong> @Model.Orders.FirstOrDefault()?.OrderNo</p>
-        <p><strong>Date de commande :</strong> @Model.Orders.FirstOrDefault()?.OrderDate.ToString("dd/MM/yyyy HH:mm")</p>
+       @if (Model.Orders != null && Model.Orders.Any())
+{
+    <p><strong>Numéro de commande :</strong> @Model.Orders.First().OrderNo</p>
+}
+else
+{
+    <p><strong>Numéro de commande :</strong> Non disponible</p>
+}
+
+        @if (Model.Orders != null && Model.Orders.Any() && Model.Orders.FirstOrDefault()?.OrderDate != null)
+{
+    <p><strong>Date de commande :</strong> @Model.Orders.First().OrderDate.ToString("dd/MM/yyyy HH:mm")</p>
+}
+else
+{
+    <p><strong>Date de commande :</strong> Non disponible</p>
+}
+
         <p><strong>Nom du client :</strong> @Model.UserName</p>
     </div>
 
@@ -71,34 +87,44 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var order in Model.Orders)
-            {
-                <tr>
-                    <td>@order.Product?.ProductName</td>
-                    <td>@order.Quantity</td>
-                    <td>@order.Product?.Price.ToString("F2")</td>
-                    <td>@((order.Quantity * (order.Product?.Price ?? 0)).GetValueOrDefault().ToString("F2"))</td>
+           @if (Model.Orders != null)
+{
+    @foreach (var order in Model.Orders)
+    {
+        <tr>
+            <td>@order.Product?.ProductName</td>
+            <td>@order.Quantity</td>
+            <td>@order.Product?.Price.ToString("F2")</td>
+            <td>@((order.Quantity * (order.Product?.Price ?? 0)))</td>
+        </tr>
+    }
+}
+else
+{
+    <tr><td colspan="4">Aucune commande trouvée.</td></tr>
+}
 
-                </tr>
-            }
+}
+
         </tbody>
         <tfoot>
             <tr>
                 <td colspan="3" style="text-align: right; font-weight: bold;">Total HT ($) :</td>
-                <td style="font-weight: bold;">
-                    @Model.Orders.Sum(o => o.Quantity * (o.Product?.Price ?? 0)).GetValueOrDefault().ToString("F2")
+                <td style="font-weight: bold; color: blue;">
+                    @((Model.Orders?.Sum(o => o.Quantity * (o.Product?.Price ?? 0)) * 1.1m).GetValueOrDefault().ToString("F2"))
                 </td>
+
             </tr>
             <tr>
                 <td colspan="3" style="text-align: right; font-weight: bold;">TVA (10%) :</td>
                 <td style="font-weight: bold;">
-                    @((Model.Orders.Sum(o => o.Quantity * (o.Product?.Price ?? 0)) * 0.1m).GetValueOrDefault().ToString("F2"))
+                    @((Model.Orders?.Sum(o => o.Quantity * (o.Product?.Price ?? 0)) * 0.1m).GetValueOrDefault().ToString("F2"))
                 </td>
             </tr>
             <tr>
                 <td colspan="3" style="text-align: right; font-weight: bold; color: blue;">Total TTC ($) :</td>
                 <td style="font-weight: bold; color: blue;">
-                    @((Model.Orders.Sum(o => o.Quantity * (o.Product?.Price ?? 0)) * 1.1m).GetValueOrDefault().ToString("F2"))
+                    @((Model.Orders?.Sum(o => o.Quantity * (o.Product?.Price ?? 0)) * 1.1m).GetValueOrDefault().ToString("F2"))
                 </td>
             </tr>
         </tfoot>

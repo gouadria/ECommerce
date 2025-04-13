@@ -12,7 +12,6 @@ using Microsoft.Extensions.Configuration;
 namespace ECommerce.Pages
 {
     [IgnoreAntiforgeryToken]
-    [Route("/Payement1")]
     public class Payement1Model : PageModel
     {
         private readonly RazorpayService _razorpayService;
@@ -33,29 +32,28 @@ namespace ECommerce.Pages
             UserEmail = string.Empty;
         }
 
-       public async Task<IActionResult> OnGetAsync(decimal? total, string email, string phone)
-{
-    Console.WriteLine($"QueryString: {Request.QueryString}");
-    Console.WriteLine($"Total: {total}, Email: {email}, Phone: {phone}");
+        public async Task<IActionResult> OnGetAsync(decimal? total, string email, string phone)
+        {
+            Console.WriteLine($"QueryString: {Request.QueryString}");
+            Console.WriteLine($"Total: {total}, Email: {email}, Phone: {phone}");
 
-    if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(phone))
-    {
-        Console.WriteLine("❌ Erreur: Email ou numéro de téléphone manquant.");
-        return BadRequest("Email et numéro de téléphone obligatoires.");
-    }
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(phone))
+            {
+                Console.WriteLine("❌ Erreur: Email ou numéro de téléphone manquant.");
+                return BadRequest("Email et numéro de téléphone obligatoires.");
+            }
 
-    Amount = total ?? 50.00M;
-    UserEmail = email;
-    PhoneNumber = phone;
+            Amount = total ?? 50.00M;
+            UserEmail = email;
+            PhoneNumber = phone;
 
-    var currentUser = await _userManager.GetUserAsync(User); // exemple d’appel async utile
-    Console.WriteLine($"Utilisateur connecté : {currentUser?.Email}");
+            var currentUser = await _userManager.GetUserAsync(User); // exemple d’appel async utile
+            Console.WriteLine($"Utilisateur connecté : {currentUser?.Email}");
 
-    ViewData["RazorpayKey"] = _configuration["Razorpay:KeyId"];
-    return Page();
-}
+            ViewData["RazorpayKey"] = _configuration["Razorpay:KeyId"];
+            return Page();
+        }
 
-        [HttpPost]
         public async Task<IActionResult> OnPostAsync([FromBody] PaymentRequest paymentRequest)
         {
             if (paymentRequest == null || paymentRequest.Amount <= 0)
@@ -115,9 +113,9 @@ namespace ECommerce.Pages
         public decimal Amount { get; set; }
 
         [JsonPropertyName("email")]
-        public string Email { get; set; } = string.Empty; // ← initialisé pour éviter erreur nullable
+        public string Email { get; set; } = string.Empty;
 
         [JsonPropertyName("phone")]
-        public string PhoneNumber { get; set; } = string.Empty; // ← initialisé également
+        public string PhoneNumber { get; set; } = string.Empty;
     }
 }

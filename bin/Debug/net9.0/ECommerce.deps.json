@@ -23,14 +23,16 @@
           "Microsoft.Extensions.Logging.Console": "9.0.0",
           "Microsoft.VisualStudio.Web.CodeGeneration.Design": "9.0.0",
           "Newtonsoft.Json": "13.0.3",
-          "RestSharp": "108.0.0",
+          "RestSharp": "109.0.0",
           "Serilog": "4.2.0",
           "Serilog.AspNetCore": "9.0.0",
           "Serilog.Extensions.Logging": "9.0.0",
           "Serilog.Sinks.Console": "6.0.0",
           "Serilog.Sinks.File": "6.0.0",
           "System.Drawing.Common": "7.0.0",
+          "System.Security.Cryptography.Pkcs": "8.0.0",
           "System.Security.Cryptography.Xml": "7.0.0",
+          "jQuery": "3.6.0",
           "jQuery.Validation": "1.21.0",
           "jQuery.Validation.Unobtrusive": "2.0.20710"
         },
@@ -648,10 +650,10 @@
           }
         }
       },
-      "jQuery/1.4.4": {},
+      "jQuery/3.6.0": {},
       "jQuery.Validation/1.21.0": {
         "dependencies": {
-          "jQuery": "1.4.4"
+          "jQuery": "3.6.0"
         }
       },
       "jQuery.Validation.Unobtrusive/2.0.20710": {
@@ -2168,7 +2170,7 @@
           "Newtonsoft.Json": "13.0.3",
           "NuGet.Configuration": "6.11.0",
           "NuGet.Versioning": "6.11.0",
-          "System.Security.Cryptography.Pkcs": "7.0.0"
+          "System.Security.Cryptography.Pkcs": "8.0.0"
         },
         "runtime": {
           "lib/net5.0/NuGet.Packaging.dll": {
@@ -2207,11 +2209,11 @@
           }
         }
       },
-      "RestSharp/108.0.0": {
+      "RestSharp/109.0.0": {
         "runtime": {
-          "lib/net6.0/RestSharp.dll": {
-            "assemblyVersion": "108.0.0.0",
-            "fileVersion": "108.0.0.0"
+          "lib/net7.0/RestSharp.dll": {
+            "assemblyVersion": "109.0.0.0",
+            "fileVersion": "109.0.0.0"
           }
         }
       },
@@ -2637,7 +2639,7 @@
           "System.Formats.Asn1": "9.0.1"
         }
       },
-      "System.Security.Cryptography.Pkcs/7.0.0": {
+      "System.Security.Cryptography.Pkcs/8.0.0": {
         "dependencies": {
           "System.Formats.Asn1": "9.0.1"
         }
@@ -2652,7 +2654,7 @@
       },
       "System.Security.Cryptography.Xml/7.0.0": {
         "dependencies": {
-          "System.Security.Cryptography.Pkcs": "7.0.0"
+          "System.Security.Cryptography.Pkcs": "8.0.0"
         }
       },
       "System.Security.Principal.Windows/5.0.0": {},
@@ -3169,12 +3171,12 @@
       "path": "humanizer.core.zh-hant/2.14.1",
       "hashPath": "humanizer.core.zh-hant.2.14.1.nupkg.sha512"
     },
-    "jQuery/1.4.4": {
+    "jQuery/3.6.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-kexCeYIZehR5fRjo8CK1sngN5SZEQRFNfCYZHMS1RxwEEiSKetBw/gliYJcLJdJEBB+e9aHqleLCjuaSI7u23g==",
-      "path": "jquery/1.4.4",
-      "hashPath": "jquery.1.4.4.nupkg.sha512"
+      "sha512": "sha512-sSzCTDWn15waSMjDrP21jjgG1j1pwISLaKiVCClwU4XGAmuZt+FScLkdyRvh9ppoIxAW/tJtJBYei+3CAwFQ7g==",
+      "path": "jquery/3.6.0",
+      "hashPath": "jquery.3.6.0.nupkg.sha512"
     },
     "jQuery.Validation/1.21.0": {
       "type": "package",
@@ -3932,12 +3934,12 @@
       "path": "nuget.versioning/6.11.0",
       "hashPath": "nuget.versioning.6.11.0.nupkg.sha512"
     },
-    "RestSharp/108.0.0": {
+    "RestSharp/109.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-cKWm/SoZ/RGzfDbdhn5YkpR0ZBfoJLJ8S9cdjQwHFqPN1TDQGXbpbC8Olp0OlExazaBqyWyVPv4zHEpcnRF/NA==",
-      "path": "restsharp/108.0.0",
-      "hashPath": "restsharp.108.0.0.nupkg.sha512"
+      "sha512": "sha512-hWb1vbwfTt7AS4kYTAF9++8pdc4XqjDywliIIvE/IP5TINneKvX9zZJgzbRkjFogUF83aBcH/0KUsNtTJzUuvQ==",
+      "path": "restsharp/109.0.0",
+      "hashPath": "restsharp.109.0.0.nupkg.sha512"
     },
     "Serilog/4.2.0": {
       "type": "package",
@@ -4289,12 +4291,12 @@
       "path": "system.security.cryptography.cng/5.0.0",
       "hashPath": "system.security.cryptography.cng.5.0.0.nupkg.sha512"
     },
-    "System.Security.Cryptography.Pkcs/7.0.0": {
+    "System.Security.Cryptography.Pkcs/8.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-mjUbEXkR6DYRef6dnEYKdfec9otcAkibExL+1f9hmbGlWIUyaCnS3Y3oGZEet38waXmuY1ORE8vgv4sgD5nMYg==",
-      "path": "system.security.cryptography.pkcs/7.0.0",
-      "hashPath": "system.security.cryptography.pkcs.7.0.0.nupkg.sha512"
+      "sha512": "sha512-ULmp3xoOwNYjOYp4JZ2NK/6NdTgiN1GQXzVVN1njQ7LOZ0d0B9vyMnhyqbIi9Qw4JXj1JgCsitkTShboHRx7Eg==",
+      "path": "system.security.cryptography.pkcs/8.0.0",
+      "hashPath": "system.security.cryptography.pkcs.8.0.0.nupkg.sha512"
     },
     "System.Security.Cryptography.ProtectedData/8.0.0": {
       "type": "package",

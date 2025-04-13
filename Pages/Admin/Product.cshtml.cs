@@ -20,23 +20,21 @@ namespace ECommerce.Pages.Admin
         private readonly EcommerceDbContext _context;
         private readonly ILogger<ProductModel> _logger;
 
-        // Propriété pour stocker la liste des produits
-        public IList<Product> Products { get; set; }
-
-        // Propriété pour accepter les données du formulaire
-        [BindProperty]
-        public Product Product { get; set; }
-
-        public SelectList CategoryList { get; set; }
+        public IList<Product> Products { get; set; } = new List<Product>();
 
         [BindProperty]
-        public IFormFile[] ImageFile { get; set; }
+        public Product Product { get; set; } = default!;
+
+        public SelectList CategoryList { get; set; } = default!;
+
+        [BindProperty]
+        public IFormFile[] ImageFile { get; set; } = Array.Empty<IFormFile>();
 
         public int CurrentPage { get; set; } = 1;
         public int TotalPages { get; set; }
 
         [BindProperty(SupportsGet = true)]
-        public string CategoryFilter { get; set; }
+        public string CategoryFilter { get; set; } = string.Empty;
 
         [BindProperty(SupportsGet = true)]
         public decimal? MinPrice { get; set; }
@@ -53,53 +51,39 @@ namespace ECommerce.Pages.Admin
             _logger = logger;
         }
 
-        // Méthode OnGet pour afficher les produits avec les filtres
         public async Task OnGetAsync(int currentPage = 1)
         {
             try
             {
                 var query = _context.Products.AsQueryable();
 
-                // Filtrer par catégorie
-                if (!string.IsNullOrEmpty(CategoryFilter))
+                if (!string.IsNullOrEmpty(CategoryFilter) && int.TryParse(CategoryFilter, out int categoryId))
                 {
-                    if (int.TryParse(CategoryFilter, out int categoryId))
-                    {
-                        query = query.Where(p => p.CategoryId == categoryId);
-                    }
+                    query = query.Where(p => p.CategoryId == categoryId);
                 }
 
-                // Filtrer par prix
                 if (MinPrice.HasValue)
-                {
                     query = query.Where(p => p.Price >= MinPrice.Value);
-                }
+
                 if (MaxPrice.HasValue)
-                {
                     query = query.Where(p => p.Price <= MaxPrice.Value);
-                }
 
-                // Filtrer par date
                 if (DateFilter.HasValue)
-                {
                     query = query.Where(p => p.CreatedDate.Date == DateFilter.Value.Date);
-                }
 
-                // Pagination
                 var totalItems = await query.CountAsync();
-                var pageSize = 5; // Nombre d'éléments par page
+                var pageSize = 5;
                 TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
                 Products = await query
                     .OrderBy(p => p.ProductId)
                     .Include(p => p.ProductImages)
+                    .Include(p => p.Category)
                     .Skip((currentPage - 1) * pageSize)
                     .Take(pageSize)
-                    .Include(p => p.Category)
                     .ToListAsync();
 
-                // Charger la liste des catégories
-                CategoryList = new SelectList(_context.Categories, "CategoryId", "CategoryName");
+                CategoryList = new SelectList(await _context.Categories.ToListAsync(), "CategoryId", "CategoryName");
                 CurrentPage = currentPage;
             }
             catch (Exception ex)
@@ -108,7 +92,6 @@ namespace ECommerce.Pages.Admin
             }
         }
 
-        // Méthode OnPostAsync pour ajouter un produit
         public async Task<IActionResult> OnPostAsync()
         {
             try
@@ -123,21 +106,18 @@ namespace ECommerce.Pages.Admin
 
                 var productImages = new List<ProductImage>();
 
-                if (ImageFile != null && ImageFile.Length > 0)
+                if (ImageFile.Length > 0)
                 {
                     var validExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
                     var directoryPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/AdminTemplate/assets/images");
 
                     if (!Directory.Exists(directoryPath))
-                    {
                         Directory.CreateDirectory(directoryPath);
-                    }
 
                     foreach (var file in ImageFile)
                     {
-                        var fileExtension = Path.GetExtension(file.FileName).ToLower();
-
-                        if (!validExtensions.Contains(fileExtension))
+                        var extension = Path.GetExtension(file.FileName).ToLower();
+                        if (!validExtensions.Contains(extension))
                         {
                             ModelState.AddModelError("", "L'image doit être de type JPG, JPEG, PNG ou GIF.");
                             return Page();
@@ -146,10 +126,8 @@ namespace ECommerce.Pages.Admin
                         var fileName = Path.GetFileName(file.FileName);
                         var filePath = Path.Combine(directoryPath, fileName);
 
-                        using (var stream = new FileStream(filePath, FileMode.Create))
-                        {
-                            await file.CopyToAsync(stream);
-                        }
+                        await using var stream = new FileStream(filePath, FileMode.Create);
+                        await file.CopyToAsync(stream);
 
                         productImages.Add(new ProductImage
                         {
@@ -175,15 +153,11 @@ namespace ECommerce.Pages.Admin
             }
         }
 
-        // Méthode OnPostDeleteAsync pour supprimer un produit
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
             var product = await _context.Products.FindAsync(id);
-
             if (product == null)
-            {
                 return NotFound();
-            }
 
             _context.Products.Remove(product);
             await _context.SaveChangesAsync();
@@ -191,10 +165,9 @@ namespace ECommerce.Pages.Admin
             return RedirectToPage(new { currentPage = 1, CategoryFilter, MinPrice, MaxPrice, DateFilter });
         }
 
-        // Méthode OnPostUpdateAsync pour mettre à jour un produit
-        public async Task<IActionResult> OnPostUpdateAsync(int id, string name, bool isActive, IFormFile imageUrl)
+        public async Task<IActionResult> OnPostUpdateAsync(int id, string name, bool isActive, IFormFile? imageUrl)
         {
-            if (string.IsNullOrEmpty(name))
+            if (string.IsNullOrWhiteSpace(name))
             {
                 ModelState.AddModelError("ProductName", "Le nom du produit ne peut pas être vide.");
                 return Page();
@@ -203,48 +176,43 @@ namespace ECommerce.Pages.Admin
             try
             {
                 var productToUpdate = await _context.Products
-                                         .Include(p => p.ProductImages)  // Inclure les images associées
-                                         .FirstOrDefaultAsync(p => p.ProductId == id);
+                    .Include(p => p.ProductImages)
+                    .FirstOrDefaultAsync(p => p.ProductId == id);
 
                 if (productToUpdate == null)
-                {
                     return NotFound();
-                }
 
                 productToUpdate.ProductName = name;
                 productToUpdate.IsActive = isActive;
-                var productImages = new List<ProductImage>();
 
                 if (imageUrl != null)
                 {
                     var fileName = Path.GetFileName(imageUrl.FileName);
                     var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/AdminTemplate/assets/images", fileName);
-                    
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await imageUrl.CopyToAsync(stream);
-                    }
-                    
+
+                    await using var stream = new FileStream(filePath, FileMode.Create);
+                    await imageUrl.CopyToAsync(stream);
+
                     var imageUrlPath = $"/AdminTemplate/assets/images/{fileName}";
 
-                    productImages.Add(new ProductImage
+                    _context.ProductImages.Add(new ProductImage
                     {
                         ProductId = productToUpdate.ProductId,
                         ImageUrl = imageUrlPath,
                         DefaultImage = true
                     });
                 }
-                _context.ProductImages.AddRange(productImages);
 
                 await _context.SaveChangesAsync();
                 return RedirectToPage(new { currentPage = 1, CategoryFilter, MinPrice, MaxPrice, DateFilter });
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Erreur lors de la mise à jour du produit avec ID {id}: {ex.Message}");
+                _logger.LogError($"Erreur lors de la mise à jour du produit avec ID {id} : {ex.Message}");
                 ModelState.AddModelError("", "Une erreur est survenue lors de la mise à jour du produit.");
                 return Page();
             }
         }
     }
 }
+

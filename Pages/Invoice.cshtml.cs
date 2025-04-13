@@ -12,7 +12,8 @@ public class InvoiceModel : PageModel
     private readonly EcommerceDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
 
-    public List<Order>? Orders { get; set; }
+    // ✅ Plus besoin du "?" car on initialise avec une liste vide
+    public List<Order> Orders { get; set; } = new();
     public string UserName { get; set; } = string.Empty;
 
     public InvoiceModel(EcommerceDbContext context, UserManager<IdentityUser> userManager)
@@ -30,9 +31,12 @@ public class InvoiceModel : PageModel
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return RedirectToPage("/Account/Login");
 
-        UserName = user.UserName;
+        UserName = user.UserName ?? string.Empty;
 
-        var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == user.Id);
+
+        var order = await _context.Orders
+            .FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == user.Id);
+
         if (order == null) return RedirectToPage("/Error");
 
         Orders = await _context.Orders
@@ -40,11 +44,14 @@ public class InvoiceModel : PageModel
             .Include(o => o.Product)
             .ToListAsync();
 
-        if (Orders == null || !Orders.Any()) return RedirectToPage("/Error");
+        // ✅ Ce check est désormais facultatif car Orders ne sera jamais null,
+        // mais on garde le test logique
+        if (!Orders.Any()) return RedirectToPage("/Error");
 
         return Page();
     }
 }
+
 
 
 
