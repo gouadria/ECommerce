@@ -1,4 +1,4 @@
-#define DEFAULT // ALT DEFAULT
+#define DEFAULT
 #if NEVER
 #elif DEFAULT
 using Microsoft.AspNetCore.Identity;
@@ -81,8 +81,11 @@ builder.Services.AddScoped<IAuthorizationHandler, ContactIsOwnerAuthorizationHan
 builder.Services.AddSingleton<IAuthorizationHandler, ContactAdministratorsAuthorizationHandler>();
 builder.Services.AddSingleton<IAuthorizationHandler, ContactManagerAuthorizationHandler>();
 
-// Redirection HTTPS sans forcer un port spécifique
-builder.Services.AddHttpsRedirection();
+// Redirection HTTPS configurée pour la production (port 443)
+builder.Services.AddHttpsRedirection(options =>
+{
+    options.HttpsPort = 443;
+});
 
 // Ajout du cache mémoire pour la session
 builder.Services.AddDistributedMemoryCache();
@@ -121,7 +124,7 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Error");
-    app.UseHsts(); // Strict HTTPS
+    app.UseHsts(); // Active le Strict-Transport-Security
 }
 
 app.UseHttpsRedirection();
