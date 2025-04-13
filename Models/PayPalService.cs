@@ -70,30 +70,26 @@ public class PayPalService
         try
         {
             var response = await client.PostAsync("https://api-m.sandbox.paypal.com/v2/checkout/orders", content);
+            var result = await response.Content.ReadAsStringAsync();
 
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadAsStringAsync();
-                dynamic? jsonResponse = JsonConvert.DeserializeObject(result);
-
-                if (jsonResponse != null && jsonResponse.links != null)
-                {
-                    foreach (var link in jsonResponse.links)
-                    {
-                        if (link != null && link.rel != null && link.rel == "approve" && link.href != null)
-                        {
-                            return link.href.ToString();
-                        }
-                    }
-                    return "Erreur: L'URL d'approbation PayPal est manquante.";
-                }
-
-                return "Erreur: Les liens de la réponse PayPal sont manquants.";
-            }
-            else
+            if (!response.IsSuccessStatusCode)
             {
                 return $"Erreur PayPal: {response.StatusCode}";
             }
+
+            var orderResponse = JsonConvert.DeserializeObject<PayPalOrderResponse>(result);
+            if (orderResponse?.Links != null)
+            {
+                foreach (var link in orderResponse.Links)
+                {
+                    if (link != null && link.Rel == "approve" && !string.IsNullOrWhiteSpace(link.Href))
+                    {
+                        return link.Href;
+                    }
+                }
+            }
+
+            return "Erreur: L'URL d'approbation PayPal est manquante.";
         }
         catch (Exception ex)
         {
@@ -115,24 +111,39 @@ public class PayPalService
         try
         {
             var response = await client.PostAsync("https://api.sandbox.paypal.com/v1/oauth2/token", content);
+            var result = await response.Content.ReadAsStringAsync();
 
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadAsStringAsync();
-                dynamic? jsonResponse = JsonConvert.DeserializeObject(result);
+            if (!response.IsSuccessStatusCode)
+                return string.Empty;
 
-                if (jsonResponse != null && jsonResponse.access_token != null)
-                {
-                    return jsonResponse.access_token.ToString();
-                }
-            }
-
-            return string.Empty;
+            var tokenResponse = JsonConvert.DeserializeObject<PayPalTokenResponse>(result);
+            return tokenResponse?.AccessToken ?? string.Empty;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Erreur lors de l'obtention du token d'accès PayPal : {ex.Message}");
             return string.Empty;
         }
+    }
+
+    private class PayPalTokenResponse
+    {
+        [JsonProperty("access_token")]
+        public string? AccessToken { get; set; }
+    }
+
+    private class PayPalOrderResponse
+    {
+        [JsonProperty("links")]
+        public List<PayPalLink>? Links { get; set; }
+    }
+
+    private class PayPalLink
+    {
+        [JsonProperty("rel")]
+        public string? Rel { get; set; }
+
+        [JsonProperty("href")]
+        public string? Href { get; set; }
     }
 }
