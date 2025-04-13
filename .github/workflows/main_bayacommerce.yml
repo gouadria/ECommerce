@@ -22,14 +22,14 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore ECommerce/ECommerce.csproj
+        run: dotnet restore ECommerce.csproj
 
       - name: Build project
-        run: dotnet build ECommerce/ECommerce.csproj --configuration Release --no-restore
+        run: dotnet build ECommerce.csproj --configuration Release --no-restore
 
       - name: Publish project as self-contained
         run: |
-          dotnet publish ECommerce/ECommerce.csproj \
+          dotnet publish ECommerce.csproj \
             -c Release \
             -o ./publish \
             --self-contained true \
