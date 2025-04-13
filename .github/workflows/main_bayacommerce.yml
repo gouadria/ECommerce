@@ -61,4 +61,5 @@ jobs:
         with:
           app-name: 'bayacommerce'
           slot-name: 'Production'
-          package: .net-app  # On utilise l'artefact téléchargé pour le déploiement
+          package: ./net-app
+
