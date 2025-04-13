@@ -17,13 +17,12 @@ namespace ECommerce.Models
         public RazorpayService(IConfiguration configuration, IHttpClientFactory httpClientFactory)
         {
             _httpClient = httpClientFactory.CreateClient();
-           _keyId = configuration["Razorpay:KeyId"];
-_keySecret = configuration["Razorpay:KeySecret"];
 
-if (string.IsNullOrWhiteSpace(_keyId) || string.IsNullOrWhiteSpace(_keySecret))
-{
-    throw new ArgumentNullException("Les clés API Razorpay ne sont pas configurées correctement.");
-}
+            _keyId = configuration["Razorpay:KeyId"] 
+                     ?? throw new ArgumentNullException("Razorpay:KeyId", "La clé API Razorpay 'KeyId' est manquante dans la configuration.");
+
+            _keySecret = configuration["Razorpay:KeySecret"] 
+                         ?? throw new ArgumentNullException("Razorpay:KeySecret", "La clé API Razorpay 'KeySecret' est manquante dans la configuration.");
 
             var authToken = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_keyId}:{_keySecret}"));
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authToken);
@@ -43,7 +42,7 @@ if (string.IsNullOrWhiteSpace(_keyId) || string.IsNullOrWhiteSpace(_keySecret))
 
             var orderData = new
             {
-                amount = (int)(amount * 100), // Conversion en paise (INR)
+                amount = (int)(amount * 100), // En paise (centimes INR)
                 currency = "INR",
                 payment_capture = 1,
                 notes = new
@@ -66,7 +65,7 @@ if (string.IsNullOrWhiteSpace(_keyId) || string.IsNullOrWhiteSpace(_keySecret))
                     throw new HttpRequestException($"Erreur Razorpay ({response.StatusCode}): {responseString}");
                 }
 
-                return responseString; // Contient l'order_id
+                return responseString;
             }
             catch (Exception ex)
             {
@@ -76,5 +75,3 @@ if (string.IsNullOrWhiteSpace(_keyId) || string.IsNullOrWhiteSpace(_keySecret))
         }
     }
 }
-
-
