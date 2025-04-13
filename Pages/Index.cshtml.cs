@@ -13,56 +13,57 @@ namespace ECommerce.Pages
         private readonly EcommerceDbContext _context;
         private readonly ILogger<CategoryModel> _logger;
 
+        // PropriÃ©tÃ©s pour stocker la liste des produits ; initialisÃ©es par dÃ©faut
+        public IList<Product> Products { get; set; } = new List<Product>();
+        public IList<Product> ProductsForEight { get; set; } = new List<Product>();
 
-        // Propriété pour stocker la liste des catégories
-        public IList<Product> Products { get; set; }
-
-        public IList<Product> ProductsForEight { get; set; } // Pour 8 produits
-
-        // Propriété pour accepter les données du formulaire
+        // PropriÃ©tÃ© pour accepter les donnÃ©es du formulaire
         [BindProperty]
-        public Product Product { get; set; }
+        public Product Product { get; set; } = new Product(); // InitialisÃ© par dÃ©faut
         [BindProperty]
-        public IFormFile ImageFile { get; set; }
-        
+        public IFormFile ImageFile { get; set; }  // Pas d'erreur de non-nullabilitÃ© ici
+
         public IndexModel(EcommerceDbContext context, ILogger<CategoryModel> logger)
         {
             _context = context;
             _logger = logger;
         }
 
-        // Méthode OnGet pour récupérer les catégories
-        public async Task OnGetAsync()
+        public async Task OnGetAsync(decimal total)
         {
-            // Étape 1 : Récupérer toutes les catégories
-var categories = await _context.Categories
-    .ToListAsync(); // Exécuter la requête pour récupérer toutes les catégories
+            Amount = total;
 
-// Étape 2 : Pour chaque catégorie, récupérer le premier produit disponible
-var Productsm = new List<Product>();
+            // RÃ©cupÃ©rer toutes les catÃ©gories
+            var categories = await _context.Categories.ToListAsync();
 
-foreach (var category in categories)
-{
-    var product = await _context.Products
-        .Include(p => p.ProductImages)  // Inclure les images du produit
-        .Where(p => p.CategoryId == category.CategoryId && p.Quantity > 0)  // Filtrer par catégorie et stock disponible
-        .FirstOrDefaultAsync();  // Récupérer le premier produit pour cette catégorie
+            // Pour chaque catÃ©gorie, rÃ©cupÃ©rer le premier produit disponible
+            var Productsm = new List<Product>();
 
-    if (product != null)
-    {
-        Productsm.Add(product);  // Ajouter le produit à la liste
-    }
-}
+            foreach (var category in categories)
+            {
+                var product = await _context.Products
+                    .Include(p => p.ProductImages)  // Inclure les images du produit
+                    .Where(p => p.CategoryId == category.CategoryId && p.Quantity > 0)
+                    .FirstOrDefaultAsync();
 
-// Limiter à 6 produits si nécessaire
-Products = Productsm.Take(6).ToList();
+                if (product != null)
+                {
+                    Productsm.Add(product);  // Ajouter le produit Ã  la liste
+                }
+            }
+
+            // Limiter Ã  6 produits si nÃ©cessaire
+            Products = Productsm.Take(6).ToList();
 
             ProductsForEight = await _context.Products
               .OrderBy(p => p.Category)
-              .Include(p => p.Category) // Inclure la catégorie si nécessaire
+              .Include(p => p.Category)
               .Include(p => p.ProductImages)
               .Take(8)
               .ToListAsync();
         }
+
+        // PropriÃ©tÃ© qui manque dans votre code original, ajoutÃ©e ici pour la compilation
+        public decimal Amount { get; set; }
     }
 }
