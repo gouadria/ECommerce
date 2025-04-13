@@ -3,50 +3,51 @@ name: Build and deploy ASP.Net Core app to Azure Web App - bayacommerce
 on:
   push:
     branches:
-      - main  # Détecte automatiquement les pushs sur la branche principale
-  workflow_dispatch:  # Permet également d'exécuter le workflow manuellement si nécessaire
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: read # Permet de récupérer le code depuis le dépôt
+      contents: read
 
     steps:
-      - uses: actions/checkout@v4  # Récupère le code depuis le dépôt GitHub
+      - uses: actions/checkout@v4
 
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.x'  # Spécifie la version de .NET Core à utiliser
+          dotnet-version: '9.x'
 
       - name: Build with dotnet
-        run: dotnet build ECommerce.csproj --configuration Release  # Compilation du projet
+        run: dotnet build ECommerce.csproj --configuration Release
 
       - name: dotnet publish
-        run: dotnet publish ECommerce.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"  # Publication explicite du projet
+        run: dotnet publish ECommerce.csproj -c Release -o publish
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp  # Charge l'artefact généré pour le job de déploiement
+          name: net-app
+          path: publish
 
   deploy:
     runs-on: windows-latest
-    needs: build  # Dépend du job 'build'
+    needs: build
     environment:
-      name: 'Production'  # Le nom de l'environnement de déploiement
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}  # URL de l'App Service après le déploiement
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write  # Nécessaire pour la demande de jeton JWT
-      contents: read  # Nécessaire pour récupérer le code
+      id-token: write
+      contents: read
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: .net-app  # Télécharge l'artefact du job de construction
+          name: net-app
+          path: ./net-app
 
       - name: Login to Azure
         uses: azure/login@v2
