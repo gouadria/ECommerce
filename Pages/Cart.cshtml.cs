@@ -1,4 +1,4 @@
-﻿using ECommerce.Models;
+using ECommerce.Models;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -41,8 +41,13 @@ namespace ECommerce.Pages
 
             if (string.IsNullOrEmpty(sessionCartId))
             {
-                // Créer un nouveau panier
-                cart = new Cart { UserId = userId, CreatedDate = DateTime.UtcNow, CartProducts = new List<CartProduct>() };
+                // Créer un nouveau panier sans affecter la propriété User (qui sera chargée par EF Core ultérieurement)
+                cart = new Cart 
+                { 
+                    UserId = userId, 
+                    CreatedDate = DateTime.UtcNow, 
+                    CartProducts = new List<CartProduct>()
+                };
                 _context.Carts.Add(cart);
                 await _context.SaveChangesAsync();
 
@@ -56,17 +61,22 @@ namespace ECommerce.Pages
                     .Include(c => c.CartProducts)
                     .FirstOrDefaultAsync(c => c.CartId.ToString() == sessionCartId);
 
-                // Sécurité : Si le panier n'existe plus en base, recréer un panier
+                // Sécurité : Si le panier n'existe plus en base, recréer un nouveau panier
                 if (cart == null)
                 {
-                    cart = new Cart { UserId = userId, CreatedDate = DateTime.UtcNow, CartProducts = new List<CartProduct>() };
+                    cart = new Cart 
+                    { 
+                        UserId = userId, 
+                        CreatedDate = DateTime.UtcNow, 
+                        CartProducts = new List<CartProduct>()
+                    };
                     _context.Carts.Add(cart);
                     await _context.SaveChangesAsync();
                     HttpContext.Session.SetString("CartId", cart.CartId.ToString());
                 }
             }
 
-            // Passer le panier à la vue
+            // Passer le panier à la vue et préparer le CSRF token
             ViewData["Cart"] = cart;
             ViewData["CsrfToken"] = _antiforgery.GetTokens(HttpContext).RequestToken;
 
@@ -92,7 +102,7 @@ namespace ECommerce.Pages
             {
                 Console.WriteLine("Données du panier reçues : " + Newtonsoft.Json.JsonConvert.SerializeObject(cartItems));
 
-                // Vérifier si un panier existe déjà
+                // Vérifier si un panier existe déjà pour l'utilisateur
                 var existingCart = await _context.Carts
                     .Where(c => c.UserId == userId)
                     .OrderByDescending(c => c.CreatedDate)
@@ -100,8 +110,12 @@ namespace ECommerce.Pages
 
                 if (existingCart == null)
                 {
-                    // Si aucun panier actif, en créer un nouveau
-                    existingCart = new Cart { UserId = userId, CreatedDate = DateTime.UtcNow, CartProducts = new List<CartProduct>() };
+                    existingCart = new Cart 
+                    { 
+                        UserId = userId, 
+                        CreatedDate = DateTime.UtcNow, 
+                        CartProducts = new List<CartProduct>()
+                    };
                     _context.Carts.Add(existingCart);
                     await _context.SaveChangesAsync();
                 }
@@ -153,6 +167,5 @@ namespace ECommerce.Pages
         }
     }
 }
-
 
 
