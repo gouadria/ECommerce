@@ -21,7 +21,8 @@ jobs:
           dotnet-version: '9.x'  # Spécifie la version de .NET Core à utiliser
 
       - name: Build with dotnet
-        run: dotnet build --configuration Release  # Compile l'application en mode Release
+        run: dotnet build ECommerce.csproj --configuration Release
+
 
       - name: dotnet publish
         run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"  # Publie l'application
