@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔒 Configuration du logging avec Serilog
+// 🔒 Logging avec Serilog
 builder.Host.UseSerilog((context, services, configuration) =>
 {
     configuration
@@ -25,24 +25,24 @@ builder.Host.UseSerilog((context, services, configuration) =>
         .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
 });
 
-// 🔐 Configuration de Kestrel pour production
+// 📁 Configuration de l’hôte web
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
-    serverOptions.ListenAnyIP(80); // HTTP (optionnel si derrière un reverse proxy)
+    serverOptions.ListenAnyIP(80);
     serverOptions.ListenAnyIP(443, listenOptions =>
     {
-        listenOptions.UseHttps("certificat.pfx", "votre_mot_de_passe"); // À remplacer avec votre certificat
+        listenOptions.UseHttps("certificat.pfx", "votre_mot_de_passe");
     });
 });
 
-// 🔧 Connexion à la base de données
+// 🔧 Connexion DB
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<EcommerceDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-// ⚙️ Configuration d'Identity
+// 🧑 Identity config
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
@@ -52,7 +52,7 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 
 builder.Services.AddRazorPages();
 
-// 🔒 Options de sécurité Identity
+// 🔐 Identity options
 builder.Services.Configure<IdentityOptions>(options =>
 {
     options.Password.RequireDigit = true;
@@ -66,11 +66,11 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
 
-    options.User.AllowedUserNameCharacters =
-        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+    options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
     options.User.RequireUniqueEmail = false;
 });
 
+// 🍪 Cookie
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
@@ -81,7 +81,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
-// 📦 Services personnalisés
+// 📦 Services
 builder.Services.AddSingleton<PayPalService>();
 builder.Services.AddSingleton<RazorpayService>();
 builder.Services.AddHttpClient();
@@ -93,13 +93,13 @@ builder.Services.AddScoped<IAuthorizationHandler, ContactIsOwnerAuthorizationHan
 builder.Services.AddSingleton<IAuthorizationHandler, ContactAdministratorsAuthorizationHandler>();
 builder.Services.AddSingleton<IAuthorizationHandler, ContactManagerAuthorizationHandler>();
 
-// ➕ HTTPS Redirection
+// ➕ HTTPS
 builder.Services.AddHttpsRedirection(options =>
 {
     options.HttpsPort = 443;
 });
 
-// 💾 Cache et session
+// 💾 Session
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -108,25 +108,25 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// ⚡️ Configuration de l'authentification OpenID Connect avec Azure AD
+// ✅ Lecture correcte de la section AzureAD
+var azureAdSection = builder.Configuration.GetSection("Authentication:AzureAd");
+builder.Services.Configure<OpenIdConnectOptions>(OpenIdConnectDefaults.AuthenticationScheme, azureAdSection);
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
 })
-.AddCookie(options =>
+.AddCookie()
+.AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
 {
-    options.LoginPath = "/Account/Login";
-})
-.AddOpenIdConnect(options =>
-{
-    options.ClientId = builder.Configuration["Authentication:AzureAd:ClientId"];  // Utilisation de builder.Configuration
-    options.ClientSecret = builder.Configuration["Authentication:AzureAd:ClientSecret"];  // Utilisation de builder.Configuration
-    options.Authority = builder.Configuration["Authentication:AzureAd:Authority"];  // Utilisation de builder.Configuration
-    options.CallbackPath = "/.auth/login/aad/callback"; // Assurez-vous que cette valeur est bien définie ici
+    azureAdSection.Bind(options); // <== LIGNE CLÉ
+
+    options.CallbackPath = "/.auth/login/aad/callback";
     options.ResponseType = "code";
     options.SaveTokens = true;
 });
+
 var app = builder.Build();
 
 // 🔁 Migration + Seed
@@ -147,7 +147,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// 🔀 Middlewares
+// Middlewares
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -168,7 +168,7 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 
-// 🚀 Démarrage sécurisé
+// ✅ Lancement
 try
 {
     Log.Information("Démarrage de l'application...");
