@@ -121,9 +121,9 @@ builder.Services.AddAuthentication(options =>
 .AddCookie()
 .AddOpenIdConnect(options =>
 {
-    options.ClientId = Configuration["AzureAD:ClientId"];
-    options.ClientSecret = Configuration["AzureAD:ClientSecret"];
-    options.Authority = Configuration["AzureAD:Authority"];
+    options.ClientId = builder.Configuration["Authentication:AzureAd:ClientId"];
+    options.ClientSecret = builder.Configuration["Authentication:AzureAd:ClientSecret"];
+    options.Authority = builder.Configuration["Authentication:AzureAd:Authority"];
     
 
     // Vous pouvez ajouter des options supplémentaires si nécessaire
