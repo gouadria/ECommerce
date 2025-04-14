@@ -1,48 +1,61 @@
 #define DEFAULT
 #if NEVER
 #elif DEFAULT
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using ECommerce.Models;
-using Microsoft.AspNetCore.Authorization;
-using ECommerce.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
-using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Identity.UI.Services;
+using ECommerce.Models; // Remplacez par le namespace réel de votre DbContext
+using ECommerce.Authorization;
+using System;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔒 Logging avec Serilog
+// Charger explicitement la configuration
+builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+// Optionnel : Affichage de toutes les clés pour débogage
+/*
+foreach (var kvp in builder.Configuration.AsEnumerable())
+{
+    Console.WriteLine($"{kvp.Key} = {kvp.Value}");
+}
+*/
+
+// Configuration de Serilog
 builder.Host.UseSerilog((context, services, configuration) =>
 {
     configuration
         .ReadFrom.Configuration(context.Configuration)
-        .ReadFrom.Services(services)
         .Enrich.FromLogContext()
+        .Enrich.WithMachineName()
+        .Enrich.WithThreadId()
         .WriteTo.Console()
         .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
 });
 
-// 📁 Configuration de l’hôte web
+// Configuration de Kestrel pour la production
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.ListenAnyIP(80);
     serverOptions.ListenAnyIP(443, listenOptions =>
     {
+        // Remplacez ces valeurs par vos informations réelles de certificat
         listenOptions.UseHttps("certificat.pfx", "votre_mot_de_passe");
     });
 });
 
-// 🔧 Connexion DB
+// Connexion à la base de données
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<EcommerceDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-// 🧑 Identity config
+// Configuration d'Identity
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
@@ -52,7 +65,7 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 
 builder.Services.AddRazorPages();
 
-// 🔐 Identity options
+// Options de sécurité d'Identity
 builder.Services.Configure<IdentityOptions>(options =>
 {
     options.Password.RequireDigit = true;
@@ -70,36 +83,35 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.User.RequireUniqueEmail = false;
 });
 
-// 🍪 Cookie
+// Configuration du cookie d'authentification
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.Cookie.HttpOnly = true;
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
-    options.LoginPath = "/Identity/Account/Login";
-    options.LogoutPath = "/Identity/Account/Logout";
-    options.AccessDeniedPath = "/Identity/Account/AccessDenied";
-    options.SlidingExpiration = true;
+    options.AuthenticationScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.ExpireTimeSpan = TimeSpan.FromHours(12);
+    options.SlidingExpiration = false;
+    options.Cookie.Name = "MyCookie";
+    // Vous pouvez définir CookiePath ici si nécessaire
 });
 
-// 📦 Services
+// Enregistrement des services personnalisés
 builder.Services.AddSingleton<PayPalService>();
 builder.Services.AddSingleton<RazorpayService>();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<ZohoTokenService>();
 builder.Services.AddScoped<ZohoEmailService>();
 
-// 🔐 Authorization handlers
+// Ajout des handlers d'autorisation
 builder.Services.AddScoped<IAuthorizationHandler, ContactIsOwnerAuthorizationHandler>();
 builder.Services.AddSingleton<IAuthorizationHandler, ContactAdministratorsAuthorizationHandler>();
 builder.Services.AddSingleton<IAuthorizationHandler, ContactManagerAuthorizationHandler>();
 
-// ➕ HTTPS
+// Redirection HTTPS
 builder.Services.AddHttpsRedirection(options =>
 {
     options.HttpsPort = 443;
 });
 
-// 💾 Session
+// Configuration du cache et de la session
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -108,38 +120,61 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// ✅ Lecture correcte de la section AzureAD
-// Récupérer la section Azure AD depuis la configuration
+// === CONFIGURATION DE L'AUTHENTIFICATION OPENID CONNECT AVEC AZURE AD ===
+
+// Récupérer la section "Authentication:AzureAd" depuis la configuration
 var azureAdSection = builder.Configuration.GetSection("Authentication:AzureAd");
 
-// Configurer l'authentification avec les options OpenIdConnect
+// Afficher en debug le ClientId pour vérifier qu'il est chargé correctement
+Console.WriteLine("DEBUG: AzureAd ClientId = " + azureAdSection["ClientId"]);
+
+// Configurer l'authentification avec Cookie et OpenIdConnect
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
 })
-.AddCookie()
-.AddOpenIdConnect(options =>
+.AddCookie("Cookies", options =>
 {
-    options.ClientId = builder.Configuration["Authentication:AzureAd:ClientId"];
-    options.ClientSecret = builder.Configuration["Authentication:AzureAd:ClientSecret"];
-    options.Authority = builder.Configuration["Authentication:AzureAd:Authority"];
+    // Exemple de configuration supplémentaire pour le cookie si besoin
+    options.LoginPath = "/Identity/Account/Login";
+})
+.AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+{
+    // Lier explicitement les valeurs depuis la section "Authentication:AzureAd"
+    options.ClientId = azureAdSection["ClientId"];
+    options.ClientSecret = azureAdSection["ClientSecret"];
+    options.Authority = azureAdSection["Authority"];
+    options.MetadataAddress = $"{azureAdSection["Authority"]}/.well-known/openid-configuration";
     
+    options.GetClaimsFromUserInfoEndpoint = true;
+    options.AuthenticationScheme = "oidc";
+    options.SignInScheme = "Cookies";
+    // Ici, vous utilisez l'ID Token comme réponse. Vous pouvez passer à "code" si nécessaire.
+    options.ResponseType = OpenIdConnectResponseType.IdToken;
 
-    // Vous pouvez ajouter des options supplémentaires si nécessaire
+    // Paramètres de validation du token
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        NameClaimType = IdentityClaimTypes.WindowsAccountName,
+        RoleClaimType = IdentityClaimTypes.Role,
+        AuthenticationType = "Cookies",
+        ValidateIssuer = false
+    };
+
+    // Scopes nécessaires à l'application
+    options.Scope.Clear(); // Pour repartir d'une configuration propre
+    options.Scope.Add("openid");
+    options.Scope.Add("profile");
+    options.Scope.Add("roles");
+
+    // Définir le CallbackPath (Assurez-vous qu'il correspond à la redirection enregistrée dans Azure AD)
     options.CallbackPath = "/.auth/login/aad/callback";
-    options.ResponseType = "code";
-    options.SaveTokens = true;
-
-
-    // options.Scope.Add("openid");
-    // options.Scope.Add("profile");
 });
-
 
 var app = builder.Build();
 
-// 🔁 Migration + Seed
+// Migration et Seed de la base de données
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -147,17 +182,17 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<EcommerceDbContext>();
         context.Database.Migrate();
-
+        
         var testUserPw = builder.Configuration.GetValue<string>("SeedUserPW");
         await SeedData.Initialize(services, testUserPw);
     }
     catch (Exception ex)
     {
-        Log.Error(ex, "Erreur pendant l'initialisation de la base de données");
+        Serilog.Log.Error(ex, "Erreur pendant l'initialisation de la base de données");
     }
 }
 
-// Middlewares
+// Configuration des middlewares
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -172,24 +207,21 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapRazorPages();
 
-// ✅ Lancement
 try
 {
-    Log.Information("Démarrage de l'application...");
+    Serilog.Log.Information("Démarrage de l'application...");
     await app.RunAsync();
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "Erreur critique : l'application ne peut pas démarrer.");
+    Serilog.Log.Fatal(ex, "Erreur critique : l'application ne peut pas démarrer.");
 }
 finally
 {
-    Log.CloseAndFlush();
+    Serilog.Log.CloseAndFlush();
 }
 #endif
