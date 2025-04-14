@@ -120,17 +120,13 @@ builder.Services.AddAuthentication(options =>
 })
 .AddOpenIdConnect(options =>
 {
-    options.ClientId = builder.Configuration["Authentication:AzureAd:ClientId"];
-    options.ClientSecret = builder.Configuration["Authentication:AzureAd:ClientSecret"];
-    options.Authority = builder.Configuration["Authentication:AzureAd:Authority"];
-    
-    // Ajoutez ici le CallbackPath
-    options.CallbackPath = "/signin-oidc"; // Assurez-vous que cette URL est correcte
-
-    options.ResponseType = "code"; // Ajout recommandé
-    options.SaveTokens = true;    // Ajout recommandé
+    options.ClientId = Configuration["Authentication:AzureAd:ClientId"];
+    options.ClientSecret = Configuration["Authentication:AzureAd:ClientSecret"];
+    options.Authority = Configuration["Authentication:AzureAd:Authority"];
+    options.CallbackPath = "/.auth/login/aad/callback"; // Assurez-vous que cette valeur est bien définie ici
+    options.ResponseType = "code";
+    options.SaveTokens = true;
 });
-
 var app = builder.Build();
 
 // 🔁 Migration + Seed
