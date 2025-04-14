@@ -974,6 +974,8 @@
 	  <PackageReference Include="System.Security.Cryptography.Pkcs" Version="7.1.0" />
 	  <PackageReference Include="System.Security.Cryptography.Xml" Version="7.0.0" />
 	  <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+          <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="6.0.20" />
+
   </ItemGroup>
 
 </Project>
