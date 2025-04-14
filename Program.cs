@@ -119,19 +119,19 @@ builder.Services.AddAuthentication(options =>
     options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
 })
 .AddCookie()
-.AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+.AddOpenIdConnect(options =>
 {
-    // Liaison explicite de la section Azure AD à l'OpenIdConnectOptions
-    options.ClientId = azureAdSection["ClientId"];
-    options.ClientSecret = azureAdSection["ClientSecret"];
-    options.Authority = azureAdSection["Authority"];
+    options.ClientId = Configuration["AzureAD:ClientId"];
+    options.ClientSecret = Configuration["AzureAD:ClientSecret"];
+    options.Authority = Configuration["AzureAD:Authority"];
     
+
     // Vous pouvez ajouter des options supplémentaires si nécessaire
     options.CallbackPath = "/.auth/login/aad/callback";
     options.ResponseType = "code";
     options.SaveTokens = true;
 
-    // (Optionnel) Si vous avez besoin de configurer d'autres éléments comme les scopes
+
     // options.Scope.Add("openid");
     // options.Scope.Add("profile");
 });
