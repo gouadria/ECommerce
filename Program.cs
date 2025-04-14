@@ -120,9 +120,9 @@ builder.Services.AddAuthentication(options =>
 })
 .AddOpenIdConnect(options =>
 {
-    options.ClientId = Configuration["Authentication:AzureAd:ClientId"];
-    options.ClientSecret = Configuration["Authentication:AzureAd:ClientSecret"];
-    options.Authority = Configuration["Authentication:AzureAd:Authority"];
+    options.ClientId = builder.Configuration["Authentication:AzureAd:ClientId"];  // Utilisation de builder.Configuration
+    options.ClientSecret = builder.Configuration["Authentication:AzureAd:ClientSecret"];  // Utilisation de builder.Configuration
+    options.Authority = builder.Configuration["Authentication:AzureAd:Authority"];  // Utilisation de builder.Configuration
     options.CallbackPath = "/.auth/login/aad/callback"; // Assurez-vous que cette valeur est bien définie ici
     options.ResponseType = "code";
     options.SaveTokens = true;
