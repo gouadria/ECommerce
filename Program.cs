@@ -124,7 +124,8 @@ builder.Services.AddAuthentication(options =>
     options.ClientSecret = builder.Configuration["Authentication:AzureAd:ClientSecret"];
     options.Authority = builder.Configuration["Authentication:AzureAd:Authority"];
     options.CallbackPath = builder.Configuration["Authentication:AzureAd:CallbackPath"];
-    options.RedirectUri = builder.Configuration["Authentication:AzureAd:RedirectUri"];  // Assurez-vous que l'URL de redirection est correcte
+    options.ResponseType = "code"; // Ajout recommandé
+    options.SaveTokens = true;    // Ajout recommandé
 });
 
 var app = builder.Build();
