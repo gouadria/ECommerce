@@ -123,7 +123,7 @@ builder.Services.AddAuthentication(options =>
     options.ClientId = builder.Configuration["Authentication:AzureAd:ClientId"];
     options.ClientSecret = builder.Configuration["Authentication:AzureAd:ClientSecret"];
     options.Authority = builder.Configuration["Authentication:AzureAd:Authority"];
-    options.CallbackPath = builder.Configuration["Authentication:AzureAd:CallbackPath"];
+    options.CallbackPath = builder.Configuration["Authentication:AzureAd:CallbackPath"] ?? "/signin-oidc"; // Utilisation de la valeur par défaut si non définie
     options.ResponseType = "code"; // Ajout recommandé
     options.SaveTokens = true;    // Ajout recommandé
 });
