@@ -7,6 +7,7 @@ using ECommerce.Models;
 using Microsoft.AspNetCore.Authorization;
 using ECommerce.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Serilog;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -105,6 +106,25 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+});
+
+// ⚡️ Configuration de l'authentification OpenID Connect avec Azure AD
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+})
+.AddCookie(options =>
+{
+    options.LoginPath = "/Account/Login";
+})
+.AddOpenIdConnect(options =>
+{
+    options.ClientId = builder.Configuration["Authentication:AzureAd:ClientId"];
+    options.ClientSecret = builder.Configuration["Authentication:AzureAd:ClientSecret"];
+    options.Authority = builder.Configuration["Authentication:AzureAd:Authority"];
+    options.CallbackPath = builder.Configuration["Authentication:AzureAd:CallbackPath"];
+    options.RedirectUri = builder.Configuration["Authentication:AzureAd:RedirectUri"];  // Assurez-vous que l'URL de redirection est correcte
 });
 
 var app = builder.Build();
