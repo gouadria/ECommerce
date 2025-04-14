@@ -17,7 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Charger explicitement la configuration
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
-// Optionnel : Affichage de toutes les clés pour débogage
+// Optionnel : Affichage de toutes les clés pour débogage
 /*
 foreach (var kvp in builder.Configuration.AsEnumerable())
 {
@@ -141,24 +141,25 @@ builder.Services.AddAuthentication(options =>
 })
 .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
 {
-    // Lier explicitement les valeurs depuis la section "Authentication:AzureAd"
+    // Affecter explicitement les valeurs depuis "Authentication:AzureAd"
     options.ClientId = azureAdSection["ClientId"];
     options.ClientSecret = azureAdSection["ClientSecret"];
     options.Authority = azureAdSection["Authority"];
     options.MetadataAddress = $"{azureAdSection["Authority"]}/.well-known/openid-configuration";
     
     options.GetClaimsFromUserInfoEndpoint = true;
-    options.AuthenticationScheme = "oidc";
+    // La propriété "AuthenticationScheme" n'existe pas dans OpenIdConnectOptions, donc ne pas l'affecter.
     options.SignInScheme = "Cookies";
-    // Ici, vous utilisez l'ID Token comme réponse. Vous pouvez passer à "code" si nécessaire.
-    options.ResponseType = OpenIdConnectResponseType.IdToken;
+    // Utiliser "id_token" en tant que type de réponse.
+    options.ResponseType = "id_token";
+    options.SaveTokens = true;
 
     // Paramètres de validation du token
     options.TokenValidationParameters = new TokenValidationParameters
     {
-        NameClaimType = IdentityClaimTypes.WindowsAccountName,
-        RoleClaimType = IdentityClaimTypes.Role,
-        AuthenticationType = "Cookies",
+        NameClaimType = ClaimsIdentity.DefaultNameClaimType,
+        RoleClaimType = ClaimsIdentity.DefaultRoleClaimType,
+        AuthenticationType = CookieAuthenticationDefaults.AuthenticationScheme,
         ValidateIssuer = false
     };
 
@@ -168,7 +169,7 @@ builder.Services.AddAuthentication(options =>
     options.Scope.Add("profile");
     options.Scope.Add("roles");
 
-    // Définir le CallbackPath (Assurez-vous qu'il correspond à la redirection enregistrée dans Azure AD)
+    // Définir le CallbackPath (assurez-vous qu'il correspond à la redirection configurée dans Azure AD)
     options.CallbackPath = "/.auth/login/aad/callback";
 });
 
@@ -182,7 +183,7 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<EcommerceDbContext>();
         context.Database.Migrate();
-        
+
         var testUserPw = builder.Configuration.GetValue<string>("SeedUserPW");
         await SeedData.Initialize(services, testUserPw);
     }
