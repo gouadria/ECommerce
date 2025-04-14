@@ -109,9 +109,10 @@ builder.Services.AddSession(options =>
 });
 
 // ✅ Lecture correcte de la section AzureAD
+// Récupérer la section Azure AD depuis la configuration
 var azureAdSection = builder.Configuration.GetSection("Authentication:AzureAd");
-builder.Services.Configure<OpenIdConnectOptions>(OpenIdConnectDefaults.AuthenticationScheme, azureAdSection);
 
+// Configurer l'authentification avec les options OpenIdConnect
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -120,12 +121,21 @@ builder.Services.AddAuthentication(options =>
 .AddCookie()
 .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
 {
-    azureAdSection.Bind(options); // <== LIGNE CLÉ
-
+    // Liaison explicite de la section Azure AD à l'OpenIdConnectOptions
+    options.ClientId = azureAdSection["ClientId"];
+    options.ClientSecret = azureAdSection["ClientSecret"];
+    options.Authority = azureAdSection["Authority"];
+    
+    // Vous pouvez ajouter des options supplémentaires si nécessaire
     options.CallbackPath = "/.auth/login/aad/callback";
     options.ResponseType = "code";
     options.SaveTokens = true;
+
+    // (Optionnel) Si vous avez besoin de configurer d'autres éléments comme les scopes
+    // options.Scope.Add("openid");
+    // options.Scope.Add("profile");
 });
+
 
 var app = builder.Build();
 
