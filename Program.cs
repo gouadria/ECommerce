@@ -9,6 +9,8 @@ using ECommerce.Models; // Remplacez par le namespace réel de votre DbContext
 using ECommerce.Authorization; // Assurez-vous que ce namespace est correct
 using System;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+
 
 public static class Program
 {
