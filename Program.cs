@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
-using Serilog.Enrichers.Thread; // Assurez-vous d'avoir installé Serilog.Enrichers.Thread
-using ECommerce.Models; // Remplacez par le namespace de votre DbContext
-using ECommerce.Authorization; // Assurez-vous que ce namespace est correct
+// using Serilog.Enrichers.Thread;  // Cette directive est supprimée pour éviter l'erreur
+using ECommerce.Models;              // Remplacez par le namespace réel de votre DbContext
+using ECommerce.Authorization;       // Assurez-vous que ce namespace est correct et que vos handlers implémentent IAuthorizationHandler
 using System;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
@@ -28,7 +28,8 @@ public static class Program
                 .ReadFrom.Configuration(context.Configuration)
                 .Enrich.FromLogContext()
                 .Enrich.WithMachineName()
-                .Enrich.WithThreadId()
+                // .Enrich.WithThreadId() 
+                // Si vous souhaitez inclure l'ID du thread, assurez-vous que le package Serilog.Enrichers.Thread est installé
                 .WriteTo.Console()
                 .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
         });
@@ -39,7 +40,7 @@ public static class Program
             serverOptions.ListenAnyIP(80);
             serverOptions.ListenAnyIP(443, listenOptions =>
             {
-                // Remplacez par vos informations réelles de certificat
+                // Remplacez ces valeurs par vos informations réelles de certificat
                 listenOptions.UseHttps("certificat.pfx", "votre_mot_de_passe");
             });
         });
@@ -82,7 +83,7 @@ public static class Program
         // Configuration du cookie d'authentification
         builder.Services.ConfigureApplicationCookie(options =>
         {
-            // La propriété AuthenticationScheme n'est pas nécessaire ici car AddAuthentication le gère déjà.
+            // La propriété AuthenticationScheme n'est pas nécessaire ici, car AddAuthentication définit déjà le schéma.
             options.ExpireTimeSpan = TimeSpan.FromHours(12);
             options.SlidingExpiration = false;
             options.Cookie.Name = "MyCookie";
@@ -135,8 +136,8 @@ public static class Program
             options.ClientSecret = azureAdSection["ClientSecret"];
             options.Authority = azureAdSection["Authority"];
             options.MetadataAddress = $"{azureAdSection["Authority"]}/.well-known/openid-configuration";
-            
-            // Forcer HTTPS (toujours requis en production). Si vous êtes en développement, vous pouvez définir RequireHttpsMetadata à false.
+
+            // Forcer HTTPS : si en développement, vous pouvez le désactiver pour tester, sinon, il doit être en HTTPS.
             if (builder.Environment.IsDevelopment())
             {
                 options.RequireHttpsMetadata = false;
@@ -145,10 +146,10 @@ public static class Program
             {
                 options.RequireHttpsMetadata = true;
             }
-            
+
             options.GetClaimsFromUserInfoEndpoint = true;
             options.SignInScheme = "Cookies";
-            options.ResponseType = "code";  // Utiliser "code" pour le flux Authorization Code
+            options.ResponseType = "code";  // Utiliser "code" pour Authorization Code Flow
             options.SaveTokens = true;
 
             // Paramètres de validation du token
@@ -165,7 +166,7 @@ public static class Program
             options.Scope.Add("profile");
             options.Scope.Add("roles");
 
-            // Définir le CallbackPath, assurez-vous qu'il correspond à la configuration dans Azure AD
+            // Définir le CallbackPath (doit être enregistré dans Azure AD)
             options.CallbackPath = "/.auth/login/aad/callback";
         });
 
@@ -223,4 +224,5 @@ public static class Program
         }
     }
 }
+
 
