@@ -5,11 +5,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
-using ECommerce.Models; // Remplacez par le namespace réel de votre DbContext
-using ECommerce.Authorization; // Vérifiez que ce namespace contient bien vos gestionnaires d'autorisation
-using System;
+using ECommerce.Models; // Remplace par ton vrai namespace
+using ECommerce.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Azure.Identity;
+using Azure.Core;
+using Microsoft.Data.SqlClient;
 
 public static class Program
 {
@@ -17,40 +19,59 @@ public static class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Le fichier appsettings.json est chargé automatiquement, mais ici on le force explicitement
         builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
-        // Vérifiez que la section AzureAd est bien renseignée
         string clientId = builder.Configuration["Authentication:AzureAd:ClientId"];
         if (string.IsNullOrEmpty(clientId))
         {
-            throw new Exception("AzureAd ClientId not found in configuration! Veuillez vérifier votre appsettings.json.");
+            throw new Exception("AzureAd ClientId introuvable dans la configuration !");
         }
 
-        // Configuration de Serilog
-        builder.Host.UseSerilog((context, services, configuration) =>
+        // Serilog config
+        builder.Host.UseSerilog((context, services, config) =>
         {
-            configuration
-                .ReadFrom.Configuration(context.Configuration)
-                .Enrich.FromLogContext()
-                .Enrich.WithMachineName()
-                // Pour l'heure, nous supprimons l'enrichisseur de Thread pour éviter l'erreur,
-                // mais vous pouvez le réactiver si vous installez correctement le package Serilog.Enrichers.Thread.
-                //.Enrich.WithThreadId()
-                .WriteTo.Console()
-                .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
+            config.ReadFrom.Configuration(context.Configuration)
+                  .Enrich.FromLogContext()
+                  .Enrich.WithMachineName()
+                  .WriteTo.Console()
+                  .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
         });
 
-   
-
-        // Connexion à la base de données
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        var managedIdentitySection = builder.Configuration.GetSection("ManagedIdentity");
+        var managedIdentityClientId = managedIdentitySection["ClientId"];
+
+        var credentialOptions = new DefaultAzureCredentialOptions();
+        if (!string.IsNullOrEmpty(managedIdentityClientId))
+        {
+            credentialOptions.ManagedIdentityClientId = managedIdentityClientId;
+        }
+
+        var credential = new DefaultAzureCredential(credentialOptions);
+
         builder.Services.AddDbContext<EcommerceDbContext>(options =>
-            options.UseSqlServer(connectionString));
+        {
+            SqlConnection connection;
+            try
+            {
+                var token = credential.GetToken(new TokenRequestContext(new[] { "https://database.windows.net/" }));
+                connection = new SqlConnection(connectionString)
+                {
+                    AccessToken = token.Token
+                };
+                Serilog.Log.Information("Jeton Managed Identity utilisé.");
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Warning(ex, "Erreur lors de l'utilisation de la Managed Identity, fallback sur la chaîne classique.");
+                connection = new SqlConnection(connectionString);
+            }
+
+            options.UseSqlServer(connection);
+        });
 
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-        // Configuration d'Identity
         builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
         {
             options.SignIn.RequireConfirmedAccount = true;
@@ -58,9 +79,6 @@ public static class Program
         .AddEntityFrameworkStores<EcommerceDbContext>()
         .AddDefaultTokenProviders();
 
-        builder.Services.AddRazorPages();
-
-        // Options de sécurité d'Identity
         builder.Services.Configure<IdentityOptions>(options =>
         {
             options.Password.RequireDigit = true;
@@ -78,7 +96,6 @@ public static class Program
             options.User.RequireUniqueEmail = false;
         });
 
-        // Configuration du cookie d'authentification (Note : pas besoin de définir AuthenticationScheme ici)
         builder.Services.ConfigureApplicationCookie(options =>
         {
             options.ExpireTimeSpan = TimeSpan.FromHours(12);
@@ -86,26 +103,8 @@ public static class Program
             options.Cookie.Name = "MyCookie";
         });
 
-        // Enregistrement des services personnalisés
-        builder.Services.AddSingleton<PayPalService>();
-        builder.Services.AddSingleton<RazorpayService>();
+        builder.Services.AddRazorPages();
         builder.Services.AddHttpClient();
-        builder.Services.AddScoped<ZohoTokenService>();
-        builder.Services.AddScoped<ZohoEmailService>();
-
-        // Ajout des handlers d'autorisation
-        builder.Services.AddScoped<IAuthorizationHandler, ContactIsOwnerAuthorizationHandler>();
-        builder.Services.AddScoped<IAuthorizationHandler, ContactAdministratorsAuthorizationHandler>();
-        builder.Services.AddScoped<IAuthorizationHandler, ContactManagerAuthorizationHandler>();
-
-        // Redirection HTTPS
-        builder.Services.AddHttpsRedirection(options =>
-        {
-            options.HttpsPort = 443;
-        });
-
-        // Configuration du cache et de la session
-        builder.Services.AddDistributedMemoryCache();
         builder.Services.AddSession(options =>
         {
             options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -113,7 +112,18 @@ public static class Program
             options.Cookie.IsEssential = true;
         });
 
-        // Configuration de l'authentification OpenID Connect avec Azure AD
+        // Services personnalisés
+        builder.Services.AddSingleton<PayPalService>();
+        builder.Services.AddSingleton<RazorpayService>();
+        builder.Services.AddScoped<ZohoTokenService>();
+        builder.Services.AddScoped<ZohoEmailService>();
+
+        // Authorization Handlers
+        builder.Services.AddScoped<IAuthorizationHandler, ContactIsOwnerAuthorizationHandler>();
+        builder.Services.AddScoped<IAuthorizationHandler, ContactAdministratorsAuthorizationHandler>();
+        builder.Services.AddScoped<IAuthorizationHandler, ContactManagerAuthorizationHandler>();
+
+        // Auth Azure AD
         var azureAdSection = builder.Configuration.GetSection("Authentication:AzureAd");
         var authLogger = LoggerFactory.Create(config => config.AddConsole()).CreateLogger("AzureAd");
         authLogger.LogInformation("AzureAd ClientId: {ClientId}", azureAdSection["ClientId"]);
@@ -134,24 +144,12 @@ public static class Program
             options.Authority = azureAdSection["Authority"];
             options.MetadataAddress = $"{azureAdSection["Authority"]}/.well-known/openid-configuration";
 
-             if (builder.Environment.IsDevelopment())
-            {
-                options.RequireHttpsMetadata = false;
-            }
-            else
-            {
-                options.RequireHttpsMetadata = true;
-            }
-
-            // Forcer HTTPS en production, autoriser HTTP en développement (pour tests) :
             options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-
             options.GetClaimsFromUserInfoEndpoint = true;
             options.SignInScheme = "Cookies";
-            options.ResponseType = "code";  // Utiliser "code" pour le flux Authorization Code
+            options.ResponseType = "code";
             options.SaveTokens = true;
 
-            // Paramètres de validation du token
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 NameClaimType = ClaimsIdentity.DefaultNameClaimType,
@@ -159,19 +157,24 @@ public static class Program
                 ValidateIssuer = false
             };
 
-            // Scopes nécessaires à l'application
             options.Scope.Clear();
             options.Scope.Add("openid");
             options.Scope.Add("profile");
             options.Scope.Add("roles");
 
-            // Définir le CallbackPath (doit être enregistré dans Azure AD)
             options.CallbackPath = "/.auth/login/aad/callback";
         });
 
+        builder.Services.AddHttpsRedirection(options =>
+        {
+            options.HttpsPort = 443;
+        });
+
+        builder.Services.AddDistributedMemoryCache();
+
         var app = builder.Build();
 
-        // Migration et Seed de la base de données
+        // Migration automatique + seed
         using (var scope = app.Services.CreateScope())
         {
             var services = scope.ServiceProvider;
@@ -189,7 +192,7 @@ public static class Program
             }
         }
 
-        // Configuration des middlewares
+        // Middleware
         if (app.Environment.IsDevelopment())
         {
             app.UseMigrationsEndPoint();
@@ -203,26 +206,13 @@ public static class Program
         app.UseHttpsRedirection();
         app.UseStaticFiles();
         app.UseRouting();
-        app.UseSession();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseSession();
+
         app.MapRazorPages();
 
-        try
-        {
-            Serilog.Log.Information("Démarrage de l'application...");
-            await app.RunAsync();
-        }
-        catch (Exception ex)
-        {
-            Serilog.Log.Fatal(ex, "Erreur critique : l'application ne peut pas démarrer.");
-        }
-        finally
-        {
-            Serilog.Log.CloseAndFlush();
-        }
+        await app.RunAsync();
     }
 }
-
-
 
