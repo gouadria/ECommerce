@@ -30,7 +30,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Clean previous build
-        run: dotnet clean ECommerce.csproj
+        run: dotnet clean
 
       - name: Restore dependencies
         run: dotnet restore ECommerce.csproj
