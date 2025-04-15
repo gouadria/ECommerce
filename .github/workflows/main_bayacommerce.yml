@@ -21,19 +21,14 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Cache NuGet packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
+      - name: Clear NuGet cache
+        run: dotnet nuget locals all --clear
+
+      - name: Restore dependencies
+        run: dotnet restore ECommerce.csproj --no-cache
 
       - name: Clean previous build
         run: dotnet clean ECommerce.csproj
-
-      - name: Restore dependencies (with no cache)
-        run: dotnet restore ECommerce.csproj --no-cache
 
       - name: Build project
         run: dotnet build ECommerce.csproj --configuration Release --no-restore
