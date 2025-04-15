@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
-// using Serilog.Enrichers.Thread; // Supprimé pour résoudre l'erreur avec WithThreadId()
-using ECommerce.Models; // Remplacez par le namespace réel de votre DbContext
-using ECommerce.Authorization; // Vérifiez que ce namespace contient bien vos handlers
+using Serilog.Enrichers.Thread; // Assurez-vous d'avoir installé Serilog.Enrichers.Thread
+using ECommerce.Models; // Remplacez par le namespace de votre DbContext
+using ECommerce.Authorization; // Assurez-vous que ce namespace est correct
 using System;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
@@ -18,7 +18,7 @@ public static class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Configuration explicite de l'appsettings.json
+        // Charge explicitement le fichier de configuration
         builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
         // Configuration de Serilog
@@ -28,7 +28,7 @@ public static class Program
                 .ReadFrom.Configuration(context.Configuration)
                 .Enrich.FromLogContext()
                 .Enrich.WithMachineName()
-                // .Enrich.WithThreadId() // Suppression de cette ligne afin d'éviter l'erreur liée à l'espace de noms
+                .Enrich.WithThreadId()
                 .WriteTo.Console()
                 .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
         });
@@ -39,7 +39,7 @@ public static class Program
             serverOptions.ListenAnyIP(80);
             serverOptions.ListenAnyIP(443, listenOptions =>
             {
-                // Remplacez ces valeurs par vos informations réelles de certificat
+                // Remplacez par vos informations réelles de certificat
                 listenOptions.UseHttps("certificat.pfx", "votre_mot_de_passe");
             });
         });
@@ -82,8 +82,7 @@ public static class Program
         // Configuration du cookie d'authentification
         builder.Services.ConfigureApplicationCookie(options =>
         {
-            // La propriété AuthenticationScheme n'existe pas dans cette configuration,
-            // elle est déjà définie par AddAuthentication()
+            // La propriété AuthenticationScheme n'est pas nécessaire ici car AddAuthentication le gère déjà.
             options.ExpireTimeSpan = TimeSpan.FromHours(12);
             options.SlidingExpiration = false;
             options.Cookie.Name = "MyCookie";
@@ -136,10 +135,20 @@ public static class Program
             options.ClientSecret = azureAdSection["ClientSecret"];
             options.Authority = azureAdSection["Authority"];
             options.MetadataAddress = $"{azureAdSection["Authority"]}/.well-known/openid-configuration";
-
+            
+            // Forcer HTTPS (toujours requis en production). Si vous êtes en développement, vous pouvez définir RequireHttpsMetadata à false.
+            if (builder.Environment.IsDevelopment())
+            {
+                options.RequireHttpsMetadata = false;
+            }
+            else
+            {
+                options.RequireHttpsMetadata = true;
+            }
+            
             options.GetClaimsFromUserInfoEndpoint = true;
             options.SignInScheme = "Cookies";
-            options.ResponseType = "code";  // Utiliser "code" pour Authorization Code Flow
+            options.ResponseType = "code";  // Utiliser "code" pour le flux Authorization Code
             options.SaveTokens = true;
 
             // Paramètres de validation du token
@@ -156,7 +165,7 @@ public static class Program
             options.Scope.Add("profile");
             options.Scope.Add("roles");
 
-            // Définir le CallbackPath (doit être configuré dans Azure AD)
+            // Définir le CallbackPath, assurez-vous qu'il correspond à la configuration dans Azure AD
             options.CallbackPath = "/.auth/login/aad/callback";
         });
 
@@ -214,3 +223,4 @@ public static class Program
         }
     }
 }
+
