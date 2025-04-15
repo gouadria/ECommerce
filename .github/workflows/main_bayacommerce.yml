@@ -22,7 +22,7 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Cache NuGet packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
@@ -83,4 +83,3 @@ jobs:
           echo "The Web App URL is https://${{ secrets.AZURE_APP_NAME }}.azurewebsites.net"
         env:
           AZURE_APP_NAME: ${{ secrets.AZURE_APP_NAME }}
-
