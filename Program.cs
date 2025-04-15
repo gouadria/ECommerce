@@ -41,16 +41,7 @@ public static class Program
                 .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
         });
 
-        // Configuration de Kestrel (production)
-        builder.WebHost.ConfigureKestrel(options =>
-        {
-            options.ListenAnyIP(80);
-            options.ListenAnyIP(443, listenOptions =>
-            {
-                // Remplacez par vos infos réelles de certificat
-                listenOptions.UseHttps("certificat.pfx", "votre_mot_de_passe");
-            });
-        });
+   
 
         // Connexion à la base de données
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
