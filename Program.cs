@@ -5,12 +5,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+// using Serilog.Enrichers.Thread; // Supprimé pour résoudre l'erreur avec WithThreadId()
 using ECommerce.Models; // Remplacez par le namespace réel de votre DbContext
-using ECommerce.Authorization; // Assurez-vous que ce namespace est correct
+using ECommerce.Authorization; // Vérifiez que ce namespace contient bien vos handlers
 using System;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-
 
 public static class Program
 {
@@ -28,7 +28,7 @@ public static class Program
                 .ReadFrom.Configuration(context.Configuration)
                 .Enrich.FromLogContext()
                 .Enrich.WithMachineName()
-                .Enrich.WithThreadId() // Ajoutez le package Serilog.Enrichers.Thread
+                // .Enrich.WithThreadId() // Suppression de cette ligne afin d'éviter l'erreur liée à l'espace de noms
                 .WriteTo.Console()
                 .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
         });
@@ -82,7 +82,8 @@ public static class Program
         // Configuration du cookie d'authentification
         builder.Services.ConfigureApplicationCookie(options =>
         {
-            options.AuthenticationScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            // La propriété AuthenticationScheme n'existe pas dans cette configuration,
+            // elle est déjà définie par AddAuthentication()
             options.ExpireTimeSpan = TimeSpan.FromHours(12);
             options.SlidingExpiration = false;
             options.Cookie.Name = "MyCookie";
@@ -117,8 +118,8 @@ public static class Program
 
         // Configuration de l'authentification OpenID Connect avec Azure AD
         var azureAdSection = builder.Configuration.GetSection("Authentication:AzureAd");
-        var logger = LoggerFactory.Create(config => config.AddConsole()).CreateLogger("AzureAd");
-        logger.LogInformation("AzureAd ClientId: {ClientId}", azureAdSection["ClientId"]);
+        var authLogger = LoggerFactory.Create(config => config.AddConsole()).CreateLogger("AzureAd");
+        authLogger.LogInformation("AzureAd ClientId: {ClientId}", azureAdSection["ClientId"]);
 
         builder.Services.AddAuthentication(options =>
         {
@@ -146,7 +147,6 @@ public static class Program
             {
                 NameClaimType = ClaimsIdentity.DefaultNameClaimType,
                 RoleClaimType = ClaimsIdentity.DefaultRoleClaimType,
-                AuthenticationType = CookieAuthenticationDefaults.AuthenticationScheme,
                 ValidateIssuer = false
             };
 
@@ -156,7 +156,7 @@ public static class Program
             options.Scope.Add("profile");
             options.Scope.Add("roles");
 
-            // Définir le CallbackPath
+            // Définir le CallbackPath (doit être configuré dans Azure AD)
             options.CallbackPath = "/.auth/login/aad/callback";
         });
 

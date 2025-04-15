@@ -945,7 +945,7 @@
 	  <PackageReference Include="jQuery" Version="3.6.0" />
 	  <PackageReference Include="jQuery.Validation" Version="1.21.0" />
 	  <PackageReference Include="jQuery.Validation.Unobtrusive" Version="2.0.20710" />
-	  <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="9.0.0" />
+	  <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.2.0" />
 	  <PackageReference Include="Microsoft.AspNetCore.Authorization.Policy" Version="2.2.0" />
           <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="6.0.0" />
 	  <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.0" />
@@ -965,14 +965,14 @@
 	  <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.0" />
 	  <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
 	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-	  <PackageReference Include="RestSharp" Version="108.1.0" />
+	  <PackageReference Include="RestSharp" Version="109.0.0" />
 	  <PackageReference Include="Serilog" Version="4.2.0" />
 	  <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
 	  <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
 	  <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
 	  <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
 	  <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
-	  <PackageReference Include="System.Security.Cryptography.Pkcs" Version="7.1.0" />
+	  <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.0" />
 	  <PackageReference Include="System.Security.Cryptography.Xml" Version="7.0.0" />
 	  <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
           <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="6.0.20" />

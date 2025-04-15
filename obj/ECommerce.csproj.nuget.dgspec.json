@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\User\\Documents\\ECommerce-1\\ECommerce.csproj": {}
+    "C:\\Users\\User\\Documents\\ECommerce\\ECommerce-1\\ECommerce.csproj": {}
   },
   "projects": {
-    "C:\\Users\\User\\Documents\\ECommerce-1\\ECommerce.csproj": {
+    "C:\\Users\\User\\Documents\\ECommerce\\ECommerce-1\\ECommerce.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\User\\Documents\\ECommerce-1\\ECommerce.csproj",
+        "projectUniqueName": "C:\\Users\\User\\Documents\\ECommerce\\ECommerce-1\\ECommerce.csproj",
         "projectName": "ECommerce",
-        "projectPath": "C:\\Users\\User\\Documents\\ECommerce-1\\ECommerce.csproj",
+        "projectPath": "C:\\Users\\User\\Documents\\ECommerce\\ECommerce-1\\ECommerce.csproj",
         "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\User\\Documents\\ECommerce-1\\obj\\",
+        "outputPath": "C:\\Users\\User\\Documents\\ECommerce\\ECommerce-1\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -62,6 +62,14 @@
               "target": "Package",
               "version": "[2.2.0, )"
             },
+            "Microsoft.AspNetCore.Authentication.OpenIdConnect": {
+              "target": "Package",
+              "version": "[6.0.20, )"
+            },
+            "Microsoft.AspNetCore.Authorization": {
+              "target": "Package",
+              "version": "[6.0.0, )"
+            },
             "Microsoft.AspNetCore.Authorization.Policy": {
               "target": "Package",
               "version": "[2.2.0, )"
@@ -106,6 +114,10 @@
               "target": "Package",
               "version": "[9.0.0, )"
             },
+            "Microsoft.IdentityModel.Protocols.OpenIdConnect": {
+              "target": "Package",
+              "version": "[8.8.0, )"
+            },
             "Microsoft.VisualStudio.Web.CodeGeneration.Design": {
               "target": "Package",
               "version": "[9.0.0, )"
@@ -116,7 +128,7 @@
             },
             "RestSharp": {
               "target": "Package",
-              "version": "[108.1.0, )"
+              "version": "[109.0.0, )"
             },
             "Serilog": {
               "target": "Package",
@@ -125,6 +137,14 @@
             "Serilog.AspNetCore": {
               "target": "Package",
               "version": "[9.0.0, )"
+            },
+            "Serilog.Enrichers.Environment": {
+              "target": "Package",
+              "version": "[3.0.1, )"
+            },
+            "Serilog.Enrichers.Thread": {
+              "target": "Package",
+              "version": "[3.1.0, )"
             },
             "Serilog.Extensions.Logging": {
               "target": "Package",
@@ -144,7 +164,7 @@
             },
             "System.Security.Cryptography.Pkcs": {
               "target": "Package",
-              "version": "[7.1.0, )"
+              "version": "[8.0.0, )"
             },
             "System.Security.Cryptography.Xml": {
               "target": "Package",
