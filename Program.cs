@@ -5,9 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
-// using Serilog.Enrichers.Thread;
-using ECommerce.Models; 
-using ECommerce.Authorization; 
+using ECommerce.Models; // Remplacez par le namespace réel de votre DbContext
+using ECommerce.Authorization; // Vérifiez que ce namespace contient bien vos gestionnaires d'autorisation
 using System;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
@@ -18,8 +17,15 @@ public static class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Configuration explicite de l'appsettings.json
+        // Le fichier appsettings.json est chargé automatiquement, mais ici on le force explicitement
         builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+        // Vérifiez que la section AzureAd est bien renseignée
+        string clientId = builder.Configuration["Authentication:AzureAd:ClientId"];
+        if (string.IsNullOrEmpty(clientId))
+        {
+            throw new Exception("AzureAd ClientId not found in configuration! Veuillez vérifier votre appsettings.json.");
+        }
 
         // Configuration de Serilog
         builder.Host.UseSerilog((context, services, configuration) =>
@@ -28,18 +34,20 @@ public static class Program
                 .ReadFrom.Configuration(context.Configuration)
                 .Enrich.FromLogContext()
                 .Enrich.WithMachineName()
-                // .Enrich.WithThreadId() // Suppression de cette ligne afin d'éviter l'erreur liée à l'espace de noms
+                // Pour l'heure, nous supprimons l'enrichisseur de Thread pour éviter l'erreur,
+                // mais vous pouvez le réactiver si vous installez correctement le package Serilog.Enrichers.Thread.
+                //.Enrich.WithThreadId()
                 .WriteTo.Console()
                 .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
         });
 
-        // Configuration de Kestrel pour la production
-        builder.WebHost.ConfigureKestrel(serverOptions =>
+        // Configuration de Kestrel (production)
+        builder.WebHost.ConfigureKestrel(options =>
         {
-            serverOptions.ListenAnyIP(80);
-            serverOptions.ListenAnyIP(443, listenOptions =>
+            options.ListenAnyIP(80);
+            options.ListenAnyIP(443, listenOptions =>
             {
-                // Remplacez ces valeurs par vos informations réelles de certificat
+                // Remplacez par vos infos réelles de certificat
                 listenOptions.UseHttps("certificat.pfx", "votre_mot_de_passe");
             });
         });
@@ -79,11 +87,9 @@ public static class Program
             options.User.RequireUniqueEmail = false;
         });
 
-        // Configuration du cookie d'authentification
+        // Configuration du cookie d'authentification (Note : pas besoin de définir AuthenticationScheme ici)
         builder.Services.ConfigureApplicationCookie(options =>
         {
-            // La propriété AuthenticationScheme n'existe pas dans cette configuration,
-            // elle est déjà définie par AddAuthentication()
             options.ExpireTimeSpan = TimeSpan.FromHours(12);
             options.SlidingExpiration = false;
             options.Cookie.Name = "MyCookie";
@@ -146,9 +152,12 @@ public static class Program
                 options.RequireHttpsMetadata = true;
             }
 
+            // Forcer HTTPS en production, autoriser HTTP en développement (pour tests) :
+            options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+
             options.GetClaimsFromUserInfoEndpoint = true;
             options.SignInScheme = "Cookies";
-            options.ResponseType = "code";  // Utiliser "code" pour Authorization Code Flow
+            options.ResponseType = "code";  // Utiliser "code" pour le flux Authorization Code
             options.SaveTokens = true;
 
             // Paramètres de validation du token
@@ -165,7 +174,7 @@ public static class Program
             options.Scope.Add("profile");
             options.Scope.Add("roles");
 
-            // Définir le CallbackPath (doit être configuré dans Azure AD)
+            // Définir le CallbackPath (doit être enregistré dans Azure AD)
             options.CallbackPath = "/.auth/login/aad/callback";
         });
 
@@ -223,5 +232,6 @@ public static class Program
         }
     }
 }
+
 
 
