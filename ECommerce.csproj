@@ -945,7 +945,7 @@
 	  <PackageReference Include="jQuery" Version="3.6.0" />
 	  <PackageReference Include="jQuery.Validation" Version="1.21.0" />
 	  <PackageReference Include="jQuery.Validation.Unobtrusive" Version="2.0.20710" />
-	  <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.2.0" />
+	  <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="6.0.0" />
 	  <PackageReference Include="Microsoft.AspNetCore.Authorization.Policy" Version="2.2.0" />
           <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="6.0.0" />
 	  <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.0" />
