@@ -25,7 +25,7 @@ public static class Program
                 .ReadFrom.Configuration(context.Configuration)
                 .Enrich.FromLogContext()
                 .Enrich.WithMachineName()
-                .Enrich.WithThreadId()
+                .Enrich.WithThreadId() // Assurez-vous d'avoir ajouté Serilog.Enrichers.Thread via NuGet
                 .WriteTo.Console()
                 .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
         });
@@ -94,8 +94,8 @@ public static class Program
 
         // Ajout des handlers d'autorisation
         builder.Services.AddScoped<IAuthorizationHandler, ContactIsOwnerAuthorizationHandler>();
-        builder.Services.AddSingleton<IAuthorizationHandler, ContactAdministratorsAuthorizationHandler>();
-        builder.Services.AddSingleton<IAuthorizationHandler, ContactManagerAuthorizationHandler>();
+        builder.Services.AddScoped<IAuthorizationHandler, ContactAdministratorsAuthorizationHandler>();
+        builder.Services.AddScoped<IAuthorizationHandler, ContactManagerAuthorizationHandler>();
 
         // Redirection HTTPS
         builder.Services.AddHttpsRedirection(options =>
@@ -211,7 +211,3 @@ public static class Program
         }
     }
 }
-
-
-
-
