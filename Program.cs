@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
-// using Serilog.Enrichers.Thread;  // Cette directive est supprimée pour éviter l'erreur
-using ECommerce.Models;              // Remplacez par le namespace réel de votre DbContext
-using ECommerce.Authorization;       // Assurez-vous que ce namespace est correct et que vos handlers implémentent IAuthorizationHandler
+// using Serilog.Enrichers.Thread;
+using ECommerce.Models; 
+using ECommerce.Authorization; 
 using System;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
@@ -18,7 +18,7 @@ public static class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Charge explicitement le fichier de configuration
+        // Configuration explicite de l'appsettings.json
         builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
         // Configuration de Serilog
@@ -28,8 +28,7 @@ public static class Program
                 .ReadFrom.Configuration(context.Configuration)
                 .Enrich.FromLogContext()
                 .Enrich.WithMachineName()
-                // .Enrich.WithThreadId() 
-                // Si vous souhaitez inclure l'ID du thread, assurez-vous que le package Serilog.Enrichers.Thread est installé
+                // .Enrich.WithThreadId() // Suppression de cette ligne afin d'éviter l'erreur liée à l'espace de noms
                 .WriteTo.Console()
                 .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
         });
@@ -83,7 +82,8 @@ public static class Program
         // Configuration du cookie d'authentification
         builder.Services.ConfigureApplicationCookie(options =>
         {
-            // La propriété AuthenticationScheme n'est pas nécessaire ici, car AddAuthentication définit déjà le schéma.
+            // La propriété AuthenticationScheme n'existe pas dans cette configuration,
+            // elle est déjà définie par AddAuthentication()
             options.ExpireTimeSpan = TimeSpan.FromHours(12);
             options.SlidingExpiration = false;
             options.Cookie.Name = "MyCookie";
@@ -137,8 +137,7 @@ public static class Program
             options.Authority = azureAdSection["Authority"];
             options.MetadataAddress = $"{azureAdSection["Authority"]}/.well-known/openid-configuration";
 
-            // Forcer HTTPS : si en développement, vous pouvez le désactiver pour tester, sinon, il doit être en HTTPS.
-            if (builder.Environment.IsDevelopment())
+             if (builder.Environment.IsDevelopment())
             {
                 options.RequireHttpsMetadata = false;
             }
@@ -166,7 +165,7 @@ public static class Program
             options.Scope.Add("profile");
             options.Scope.Add("roles");
 
-            // Définir le CallbackPath (doit être enregistré dans Azure AD)
+            // Définir le CallbackPath (doit être configuré dans Azure AD)
             options.CallbackPath = "/.auth/login/aad/callback";
         });
 
