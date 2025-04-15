@@ -29,11 +29,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Clean previous build
-        run: dotnet clean ECommerce.csproj
+      - name: Clear NuGet cache
+        run: dotnet nuget locals all --clear
 
       - name: Restore dependencies
         run: dotnet restore ECommerce.csproj
+
+      - name: Clean previous build
+        run: dotnet clean ECommerce.csproj
 
       - name: Build project
         run: dotnet build ECommerce.csproj --configuration Release --no-restore
