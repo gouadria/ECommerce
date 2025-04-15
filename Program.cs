@@ -2,10 +2,11 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using ECommerce.Models; // Remplacez par le namespace réel de votre DbContext
-using ECommerce.Authorization;
+using ECommerce.Authorization; // Assurez-vous que ce namespace est correct
 using System;
 using System.Security.Claims;
 
@@ -25,7 +26,7 @@ public static class Program
                 .ReadFrom.Configuration(context.Configuration)
                 .Enrich.FromLogContext()
                 .Enrich.WithMachineName()
-                .Enrich.WithThreadId() // Assurez-vous d'avoir ajouté Serilog.Enrichers.Thread via NuGet
+                .Enrich.WithThreadId() // Ajoutez le package Serilog.Enrichers.Thread
                 .WriteTo.Console()
                 .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
         });
