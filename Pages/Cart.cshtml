@@ -1,10 +1,8 @@
-﻿@page
+@page
 @model ECommerce.Pages.CartModel
 @{
     ViewData["Title"] = "Cart";
 }
-
-<meta name="csrf-token" content="@ViewData["CsrfToken"]" />
 
 <div class="container-fluid pt-5">
     <div class="row px-xl-5">
@@ -36,10 +34,6 @@
 
 @section Scripts {
     <script>
-        function getCsrfToken() {
-            return document.querySelector('meta[name="csrf-token"]').content;
-        }
-
         document.getElementById("saveCartButton").addEventListener("click", function (event) {
             event.preventDefault();
             saveCart();
@@ -58,13 +52,12 @@
                 Quantity: item.quantity
             }));
 
-            console.log("Données du panier envoyées :", JSON.stringify(cartItems));
+            console.log("Données du panier envoyées :", cartItems);
 
             fetch('/Cart?handler=SaveCart', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'RequestVerificationToken': getCsrfToken()
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(cartItems)
             })
@@ -74,16 +67,15 @@
             })
             .then(data => {
                 console.log("Réponse du serveur :", data);
+                alert(data.message);
+                // Rediriger vers Checkout après succès
                 if (data.success) {
-                    localStorage.removeItem("cart");
                     window.location.href = "/Checkout";
-                } else {
-                    alert("Erreur lors de l'enregistrement du panier !");
                 }
             })
             .catch(error => {
                 console.error("Erreur d'envoi du panier :", error);
-                alert("Une erreur s'est produite.");
+                alert("Erreur lors de l'enregistrement du panier.");
             });
         }
     </script>
