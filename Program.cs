@@ -51,23 +51,20 @@ public static class Program
 
         builder.Services.AddDbContext<EcommerceDbContext>(options =>
         {
-            SqlConnection connection;
+            var sqlConnection = new SqlConnection(connectionString);
             try
             {
-                var token = credential.GetToken(new TokenRequestContext(new[] { "https://database.windows.net/" }));
-                connection = new SqlConnection(connectionString)
-                {
-                    AccessToken = token.Token
-                };
-                Serilog.Log.Information("Jeton Managed Identity utilisé.");
+                var tokenRequestContext = new TokenRequestContext(new[] { "https://database.windows.net/" });
+                var token = credential.GetToken(tokenRequestContext, default);
+                sqlConnection.AccessToken = token.Token;
+                Serilog.Log.Information("Jeton d'accès Azure utilisé pour la connexion SQL.");
             }
             catch (Exception ex)
             {
-                Serilog.Log.Warning(ex, "Erreur lors de l'utilisation de la Managed Identity, fallback sur la chaîne classique.");
-                connection = new SqlConnection(connectionString);
+                Serilog.Log.Warning(ex, "Échec de la récupération du jeton, utilisation de la connexion standard.");
             }
 
-            options.UseSqlServer(connection);
+            options.UseSqlServer(sqlConnection);
         });
 
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -211,6 +208,11 @@ public static class Program
         app.UseSession();
 
         app.MapRazorPages();
+
+        await app.RunAsync();
+    }
+}
+
 
         await app.RunAsync();
     }
