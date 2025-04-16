@@ -130,49 +130,12 @@ builder.Services.AddDbContext<EcommerceDbContext>(options =>
         var authLogger = LoggerFactory.Create(config => config.AddConsole()).CreateLogger("AzureAd");
         authLogger.LogInformation("AzureAd ClientId: {ClientId}", azureAdSection["ClientId"]);
 
-        builder.Services.AddAuthentication(options =>
-        {
-            options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
-        })
-        .AddCookie("Cookies", options =>
-        {
-            options.LoginPath = "/Identity/Account/Login";
-        })
-        .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
-        {
-            options.ClientId = azureAdSection["ClientId"];
-            options.ClientSecret = azureAdSection["ClientSecret"];
-            options.Authority = azureAdSection["Authority"];
-            options.MetadataAddress = $"{azureAdSection["Authority"]}/.well-known/openid-configuration";
+        builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Identity/Account/Login";
+    });
 
-            options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-            options.GetClaimsFromUserInfoEndpoint = true;
-            options.SignInScheme = "Cookies";
-            options.ResponseType = "code";
-            options.SaveTokens = true;
-
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                NameClaimType = ClaimsIdentity.DefaultNameClaimType,
-                RoleClaimType = ClaimsIdentity.DefaultRoleClaimType,
-                ValidateIssuer = false
-            };
-
-            options.Scope.Clear();
-            options.Scope.Add("openid");
-            options.Scope.Add("profile");
-            options.Scope.Add("roles");
-
-            options.CallbackPath = "/.auth/login/aad/callback";
-        });
-
-        builder.Services.AddHttpsRedirection(options =>
-        {
-            options.HttpsPort = 443;
-        });
-
-        builder.Services.AddDistributedMemoryCache();
 
         var app = builder.Build();
 
