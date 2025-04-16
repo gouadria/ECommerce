@@ -60,7 +60,7 @@ namespace ECommerce.Pages
             ViewData["Cart"] = cart;
             return Page();
         }
-
+        [HttpPost]
         [IgnoreAntiforgeryToken] // Important pour requêtes AJAX JSON
         public async Task<IActionResult> OnPostSaveCartAsync([FromBody] List<CartItemDto> cartItems)
         {
