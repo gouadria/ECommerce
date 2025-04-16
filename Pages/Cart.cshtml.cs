@@ -67,7 +67,7 @@ namespace ECommerce.Pages
             var userId = _userManager.GetUserId(User);
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized(new { success = false, message = "Utilisateur non authentifié." });
+                return RedirectToPage("/Account/Login");
             }
 
             if (cartItems == null || !cartItems.Any())
