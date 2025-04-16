@@ -37,35 +37,40 @@ public static class Program
                   .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
         });
 
-        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-        var managedIdentitySection = builder.Configuration.GetSection("ManagedIdentity");
-        var managedIdentityClientId = managedIdentitySection["ClientId"];
+       var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-        var credentialOptions = new DefaultAzureCredentialOptions();
-        if (!string.IsNullOrEmpty(managedIdentityClientId))
-        {
-            credentialOptions.ManagedIdentityClientId = managedIdentityClientId;
-        }
+// Chargement de la configuration du clientId pour l'identité managée
+var managedIdentityClientId = builder.Configuration["ManagedIdentity:ClientId"];
 
-        var credential = new DefaultAzureCredential(credentialOptions);
+// Configuration de l'authentification Azure
+var credentialOptions = new DefaultAzureCredentialOptions();
+if (!string.IsNullOrWhiteSpace(managedIdentityClientId))
+{
+    credentialOptions.ManagedIdentityClientId = managedIdentityClientId;
+}
 
-        builder.Services.AddDbContext<EcommerceDbContext>(options =>
-        {
-            var sqlConnection = new SqlConnection(connectionString);
-            try
-            {
-                var tokenRequestContext = new TokenRequestContext(new[] { "https://database.windows.net/" });
-                var token = credential.GetToken(tokenRequestContext, default);
-                sqlConnection.AccessToken = token.Token;
-                Serilog.Log.Information("Jeton d'accès Azure utilisé pour la connexion SQL.");
-            }
-            catch (Exception ex)
-            {
-                Serilog.Log.Warning(ex, "Échec de la récupération du jeton, utilisation de la connexion standard.");
-            }
+var credential = new DefaultAzureCredential(credentialOptions);
 
-            options.UseSqlServer(sqlConnection);
-        });
+// Configuration du DbContext
+builder.Services.AddDbContext<EcommerceDbContext>(options =>
+{
+    var sqlConnection = new SqlConnection(connectionString);
+
+    try
+    {
+        var tokenRequestContext = new TokenRequestContext(new[] { "https://database.windows.net/.default" });
+        var token = credential.GetToken(tokenRequestContext, default);
+        sqlConnection.AccessToken = token.Token;
+        Serilog.Log.Information("Jeton d'accès Azure utilisé pour la connexion SQL.");
+    }
+    catch (Exception ex)
+    {
+        Serilog.Log.Warning(ex, "Échec de la récupération du jeton, utilisation de la connexion standard.");
+    }
+
+    options.UseSqlServer(sqlConnection);
+});
+
 
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -212,6 +217,3 @@ public static class Program
         await app.RunAsync();
     }
 }
-
-
-
