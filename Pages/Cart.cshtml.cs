@@ -1,5 +1,4 @@
 using ECommerce.Models;
-using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -17,13 +16,11 @@ namespace ECommerce.Pages
     {
         private readonly EcommerceDbContext _context;
         private readonly UserManager<IdentityUser> _userManager;
-        private readonly IAntiforgery _antiforgery;
 
-        public CartModel(EcommerceDbContext context, UserManager<IdentityUser> userManager, IAntiforgery antiforgery)
+        public CartModel(EcommerceDbContext context, UserManager<IdentityUser> userManager)
         {
             _context = context;
             _userManager = userManager;
-            _antiforgery = antiforgery;
         }
 
         public async Task<IActionResult> OnGetAsync()
@@ -34,29 +31,23 @@ namespace ECommerce.Pages
                 return RedirectToPage("/Account/Login");
             }
 
-            // Vérifier si un panier est déjà enregistré dans la session
             var sessionCartId = HttpContext.Session.GetString("CartId");
-
             Cart cart;
 
             if (string.IsNullOrEmpty(sessionCartId))
             {
-                // Créer un nouveau panier
                 cart = new Cart { UserId = userId, CreatedDate = DateTime.UtcNow, CartProducts = new List<CartProduct>() };
                 _context.Carts.Add(cart);
                 await _context.SaveChangesAsync();
 
-                // Stocker l'ID du panier dans la session pour éviter les duplications
                 HttpContext.Session.SetString("CartId", cart.CartId.ToString());
             }
             else
             {
-                // Récupérer le panier de la session
                 cart = await _context.Carts
                     .Include(c => c.CartProducts)
                     .FirstOrDefaultAsync(c => c.CartId.ToString() == sessionCartId);
 
-                // Sécurité : Si le panier n'existe plus en base, recréer un panier
                 if (cart == null)
                 {
                     cart = new Cart { UserId = userId, CreatedDate = DateTime.UtcNow, CartProducts = new List<CartProduct>() };
@@ -66,21 +57,17 @@ namespace ECommerce.Pages
                 }
             }
 
-            // Passer le panier à la vue
             ViewData["Cart"] = cart;
-            ViewData["CsrfToken"] = _antiforgery.GetTokens(HttpContext).RequestToken;
-
             return Page();
         }
 
-        [ValidateAntiForgeryToken]
-        [HttpPost]
+        [IgnoreAntiforgeryToken] // Important pour requêtes AJAX JSON
         public async Task<IActionResult> OnPostSaveCartAsync([FromBody] List<CartItemDto> cartItems)
         {
             var userId = _userManager.GetUserId(User);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToPage("/Account/Login");
+                return Unauthorized(new { success = false, message = "Utilisateur non authentifié." });
             }
 
             if (cartItems == null || !cartItems.Any())
@@ -90,9 +77,6 @@ namespace ECommerce.Pages
 
             try
             {
-                Console.WriteLine("Données du panier reçues : " + Newtonsoft.Json.JsonConvert.SerializeObject(cartItems));
-
-                // Vérifier si un panier existe déjà
                 var existingCart = await _context.Carts
                     .Where(c => c.UserId == userId)
                     .OrderByDescending(c => c.CreatedDate)
@@ -100,7 +84,6 @@ namespace ECommerce.Pages
 
                 if (existingCart == null)
                 {
-                    // Si aucun panier actif, en créer un nouveau
                     existingCart = new Cart { UserId = userId, CreatedDate = DateTime.UtcNow, CartProducts = new List<CartProduct>() };
                     _context.Carts.Add(existingCart);
                     await _context.SaveChangesAsync();
@@ -111,11 +94,9 @@ namespace ECommerce.Pages
                     var product = await _context.Products.FindAsync(item.ProductId);
                     if (product == null)
                     {
-                        Console.WriteLine($"Produit avec ID {item.ProductId} non trouvé.");
                         continue;
                     }
 
-                    // Vérifier si le produit est déjà dans le panier
                     var existingProductInCart = await _context.CartProducts
                         .FirstOrDefaultAsync(cp => cp.CartId == existingCart.CartId && cp.ProductId == item.ProductId);
 
@@ -145,7 +126,6 @@ namespace ECommerce.Pages
             }
         }
 
-        // DTO pour les éléments du panier
         public class CartItemDto
         {
             public int ProductId { get; set; }
