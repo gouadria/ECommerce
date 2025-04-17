@@ -67,7 +67,7 @@ namespace ECommerce.Pages
             var userId = _userManager.GetUserId(User);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToPage("/Account/Login");
+                return RedirectToPage("/Identity/Account/Login");
             }
 
             if (cartItems == null || !cartItems.Any())
