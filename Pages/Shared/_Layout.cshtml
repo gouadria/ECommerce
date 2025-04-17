@@ -104,9 +104,9 @@
                     <i class="fas fa-heart text-primary"></i>
                     <span class="badge">0</span>
                 </a>
-                <a href=" /cart" class="btn border">
-                    <i class="fas fa-shopping-cart text-primary"></i>
-                    <span class="badge" id="cartItemCount">0</span>
+                <a href="javascript:void(0);" class="btn border" onclick="handleCartClick()">
+                 <i class="fas fa-shopping-cart text-primary"></i>
+                 <span class="badge" id="cartItemCount">0</span>
                 </a>
             </div>
         </div>
@@ -287,5 +287,24 @@
            });
        </script>
     @RenderSection("Scripts", required: false)
+    
+   <script>
+    function handleCartClick() {
+        const isAuthenticated = @Json.Serialize(SignInManager.IsSignedIn(User));
+        const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
+
+        if (cartItems.length > 0) {
+            if (isAuthenticated) {
+                window.location.href = "/Cart";
+            } else {
+                window.location.href = "/Identity/Account/Login";
+            }
+        } else {
+            alert("Votre panier est vide. Veuillez ajouter des articles.");
+            window.location.href = "/";
+        }
+    }
+</script>
+
 </body>
 </html>
