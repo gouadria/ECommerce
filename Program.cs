@@ -1,17 +1,12 @@
  using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
 using Serilog;
-using ECommerce.Models; // Remplace par ton vrai namespace
+using ECommerce.Models;
 using ECommerce.Authorization;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
-using Azure.Identity;
-using Azure.Core;
 using Microsoft.Data.SqlClient;
+using Microsoft.AspNetCore.Authorization;
 
 public static class Program
 {
@@ -20,12 +15,6 @@ public static class Program
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-
-        string clientId = builder.Configuration["Authentication:AzureAd:ClientId"];
-        if (string.IsNullOrEmpty(clientId))
-        {
-            throw new Exception("AzureAd ClientId introuvable dans la configuration !");
-        }
 
         // Serilog config
         builder.Host.UseSerilog((context, services, config) =>
@@ -37,40 +26,14 @@ public static class Program
                   .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
         });
 
-       var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Chargement de la configuration du clientId pour l'identité managée
-var managedIdentityClientId = builder.Configuration["ManagedIdentity:ClientId"];
-
-// Configuration de l'authentification Azure
-var credentialOptions = new DefaultAzureCredentialOptions();
-if (!string.IsNullOrWhiteSpace(managedIdentityClientId))
-{
-    credentialOptions.ManagedIdentityClientId = managedIdentityClientId;
-}
-
-var credential = new DefaultAzureCredential(credentialOptions);
-
-// Configuration du DbContext
-builder.Services.AddDbContext<EcommerceDbContext>(options =>
-{
-    var sqlConnection = new SqlConnection(connectionString);
-
-    try
-    {
-        var tokenRequestContext = new TokenRequestContext(new[] { "https://database.windows.net/.default" });
-        var token = credential.GetToken(tokenRequestContext, default);
-        sqlConnection.AccessToken = token.Token;
-        Serilog.Log.Information("Jeton d'accès Azure utilisé pour la connexion SQL.");
-    }
-    catch (Exception ex)
-    {
-        Serilog.Log.Warning(ex, "Échec de la récupération du jeton, utilisation de la connexion standard.");
-    }
-
-    options.UseSqlServer(sqlConnection);
-});
-
+        // Configuration du DbContext
+        builder.Services.AddDbContext<EcommerceDbContext>(options =>
+        {
+            var sqlConnection = new SqlConnection(connectionString);
+            options.UseSqlServer(sqlConnection);
+        });
 
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -103,6 +66,11 @@ builder.Services.AddDbContext<EcommerceDbContext>(options =>
             options.ExpireTimeSpan = TimeSpan.FromHours(12);
             options.SlidingExpiration = false;
             options.Cookie.Name = "MyCookie";
+
+            // ✅ Correction : définition des bons chemins de redirection
+            options.LoginPath = "/Identity/Account/Login";
+            options.LogoutPath = "/Identity/Account/Logout";
+            options.AccessDeniedPath = "/Admin/AccessDenied";
         });
 
         builder.Services.AddRazorPages();
@@ -125,21 +93,10 @@ builder.Services.AddDbContext<EcommerceDbContext>(options =>
         builder.Services.AddScoped<IAuthorizationHandler, ContactAdministratorsAuthorizationHandler>();
         builder.Services.AddScoped<IAuthorizationHandler, ContactManagerAuthorizationHandler>();
 
-        // Auth Azure AD
-        var azureAdSection = builder.Configuration.GetSection("Authentication:AzureAd");
-        var authLogger = LoggerFactory.Create(config => config.AddConsole()).CreateLogger("AzureAd");
-        authLogger.LogInformation("AzureAd ClientId: {ClientId}", azureAdSection["ClientId"]);
-
-        builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.LoginPath = "/Identity/Account/Login";
-    });
-
+        builder.Services.AddDistributedMemoryCache();
 
         var app = builder.Build();
 
-        // Migration automatique + seed
         using (var scope = app.Services.CreateScope())
         {
             var services = scope.ServiceProvider;
@@ -157,7 +114,6 @@ builder.Services.AddDbContext<EcommerceDbContext>(options =>
             }
         }
 
-        // Middleware
         if (app.Environment.IsDevelopment())
         {
             app.UseMigrationsEndPoint();
@@ -167,6 +123,9 @@ builder.Services.AddDbContext<EcommerceDbContext>(options =>
             app.UseExceptionHandler("/Error");
             app.UseHsts();
         }
+
+        app.Urls.Add("http://localhost:5000");
+        app.Urls.Add("https://localhost:5001");
 
         app.UseHttpsRedirection();
         app.UseStaticFiles();
