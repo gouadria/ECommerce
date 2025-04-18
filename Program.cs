@@ -1,12 +1,15 @@
- using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using ECommerce.Models;
 using ECommerce.Authorization;
-using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Authorization;
+using Azure.Identity;
+using Azure.Core;
+using Microsoft.Data.SqlClient;
 
 public static class Program
 {
@@ -14,9 +17,20 @@ public static class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+        // Configuration
+        builder.Configuration
+            .SetBasePath(builder.Environment.ContentRootPath)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+            .AddEnvironmentVariables();
 
-        // Serilog config
+        string clientId = builder.Configuration["Authentication:AzureAd:ClientId"];
+        if (string.IsNullOrEmpty(clientId))
+        {
+            throw new Exception("AzureAd ClientId introuvable dans la configuration !");
+        }
+
+        // Serilog
         builder.Host.UseSerilog((context, services, config) =>
         {
             config.ReadFrom.Configuration(context.Configuration)
@@ -27,16 +41,39 @@ public static class Program
         });
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        var managedIdentityClientId = builder.Configuration["ManagedIdentity:ClientId"];
 
-        // Configuration du DbContext
+        // Authentification Azure
+        var credentialOptions = new DefaultAzureCredentialOptions();
+        if (!string.IsNullOrWhiteSpace(managedIdentityClientId))
+        {
+            credentialOptions.ManagedIdentityClientId = managedIdentityClientId;
+        }
+
+        var credential = new DefaultAzureCredential(credentialOptions);
+
         builder.Services.AddDbContext<EcommerceDbContext>(options =>
         {
             var sqlConnection = new SqlConnection(connectionString);
+
+            try
+            {
+                var tokenRequestContext = new TokenRequestContext(new[] { "https://database.windows.net/.default" });
+                var token = credential.GetToken(tokenRequestContext, default);
+                sqlConnection.AccessToken = token.Token;
+                Serilog.Log.Information("Jeton d'accès Azure utilisé pour la connexion SQL.");
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Warning(ex, "Échec de la récupération du jeton, utilisation de la connexion standard.");
+            }
+
             options.UseSqlServer(sqlConnection);
         });
 
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+        // Identity
         builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
         {
             options.SignIn.RequireConfirmedAccount = true;
@@ -61,18 +98,43 @@ public static class Program
             options.User.RequireUniqueEmail = false;
         });
 
+        // Configuration des cookies
         builder.Services.ConfigureApplicationCookie(options =>
         {
             options.ExpireTimeSpan = TimeSpan.FromHours(12);
             options.SlidingExpiration = false;
             options.Cookie.Name = "MyCookie";
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;  // Sécuriser les cookies uniquement sur HTTPS
+            options.Cookie.HttpOnly = true;
+            options.Cookie.IsEssential = true;
 
-            // ✅ Correction : définition des bons chemins de redirection
+            // Correction des chemins de redirection pour la connexion/déconnexion et l'accès refusé
             options.LoginPath = "/Identity/Account/Login";
             options.LogoutPath = "/Identity/Account/Logout";
             options.AccessDeniedPath = "/Admin/AccessDenied";
         });
 
+        // Authentification Azure AD
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+        })
+        .AddCookie()
+        .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+        {
+            builder.Configuration.Bind("Authentication:AzureAd", options);
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                NameClaimType = "name",
+                RoleClaimType = "roles"
+            };
+        });
+
+        // Autorisation
+        builder.Services.AddAuthorization();
+
+        // Razor Pages, Sessions, HTTP
         builder.Services.AddRazorPages();
         builder.Services.AddHttpClient();
         builder.Services.AddSession(options =>
@@ -88,15 +150,14 @@ public static class Program
         builder.Services.AddScoped<ZohoTokenService>();
         builder.Services.AddScoped<ZohoEmailService>();
 
-        // Authorization Handlers
+        // Authorization handlers
         builder.Services.AddScoped<IAuthorizationHandler, ContactIsOwnerAuthorizationHandler>();
         builder.Services.AddScoped<IAuthorizationHandler, ContactAdministratorsAuthorizationHandler>();
         builder.Services.AddScoped<IAuthorizationHandler, ContactManagerAuthorizationHandler>();
 
-        builder.Services.AddDistributedMemoryCache();
-
         var app = builder.Build();
 
+        // Migration + seed
         using (var scope = app.Services.CreateScope())
         {
             var services = scope.ServiceProvider;
@@ -114,6 +175,7 @@ public static class Program
             }
         }
 
+        // Middleware
         if (app.Environment.IsDevelopment())
         {
             app.UseMigrationsEndPoint();
@@ -124,15 +186,12 @@ public static class Program
             app.UseHsts();
         }
 
-        app.Urls.Add("http://localhost:5000");
-        app.Urls.Add("https://localhost:5001");
-
         app.UseHttpsRedirection();
         app.UseStaticFiles();
         app.UseRouting();
+        app.UseSession();
         app.UseAuthentication();
         app.UseAuthorization();
-        app.UseSession();
 
         app.MapRazorPages();
 
