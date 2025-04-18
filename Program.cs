@@ -104,44 +104,47 @@ public static class Program
             options.ExpireTimeSpan = TimeSpan.FromHours(12);
             options.SlidingExpiration = false;
             options.Cookie.Name = "MyCookie";
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;  // Sécuriser les cookies uniquement sur HTTPS
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
             options.Cookie.HttpOnly = true;
             options.Cookie.IsEssential = true;
 
-            // Correction des chemins de redirection pour la connexion/déconnexion et l'accès refusé
             options.LoginPath = "/Identity/Account/Login";
             options.LogoutPath = "/Identity/Account/Logout";
             options.AccessDeniedPath = "/Admin/AccessDenied";
         });
 
         // Authentification Azure AD
-     .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
-{
-    builder.Configuration.Bind("Authentication:AzureAd", options);
-    options.ResponseType = "code";
-    options.SaveTokens = true;
-
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        NameClaimType = "name",
-        RoleClaimType = "roles"
-    };
-
-    // Gestion des erreurs d'autorisation refusée
-    options.Events = new OpenIdConnectEvents
-    {
-        OnRemoteFailure = context =>
+        builder.Services.AddAuthentication(options =>
         {
-            if (context.Failure?.Message.Contains("access_denied") == true)
-            {
-                context.HandleResponse();
-                context.Response.Redirect("/Admin/AccessDenied");
-            }
-            return Task.CompletedTask;
-        }
-    };
-});
+            options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+        })
+        .AddCookie()
+        .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+        {
+            builder.Configuration.Bind("Authentication:AzureAd", options);
+            options.ResponseType = "code";
+            options.SaveTokens = true;
 
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                NameClaimType = "name",
+                RoleClaimType = "roles"
+            };
+
+            options.Events = new OpenIdConnectEvents
+            {
+                OnRemoteFailure = context =>
+                {
+                    if (context.Failure?.Message.Contains("access_denied") == true)
+                    {
+                        context.HandleResponse();
+                        context.Response.Redirect("/Admin/AccessDenied");
+                    }
+                    return Task.CompletedTask;
+                }
+            };
+        });
 
         // Autorisation
         builder.Services.AddAuthorization();
@@ -187,10 +190,10 @@ public static class Program
             }
         }
 
-        // Middleware
+        // Pipeline
         if (app.Environment.IsDevelopment())
         {
-            app.UseMigrationsEndPoint();
+            app.UseDeveloperExceptionPage();
         }
         else
         {
@@ -201,14 +204,13 @@ public static class Program
         app.UseHttpsRedirection();
         app.UseStaticFiles();
         app.UseRouting();
-        app.UseSession();
+
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseSession();
 
         app.MapRazorPages();
 
         await app.RunAsync();
     }
 }
-
-
