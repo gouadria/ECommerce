@@ -24,12 +24,6 @@ public static class Program
             .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables();
 
-        string clientId = builder.Configuration["Authentication:AzureAd:ClientId"];
-        if (string.IsNullOrEmpty(clientId))
-        {
-            throw new Exception("AzureAd ClientId introuvable dans la configuration !");
-        }
-
         // Serilog
         builder.Host.UseSerilog((context, services, config) =>
         {
@@ -40,161 +34,143 @@ public static class Program
                   .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
         });
 
+        // Database connection with Azure Managed Identity or SQL auth
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-        var managedIdentityClientId = builder.Configuration["ManagedIdentity:ClientId"];
-
-        // Authentification Azure
+        var managedIdClientId = builder.Configuration["ManagedIdentity:ClientId"];
         var credentialOptions = new DefaultAzureCredentialOptions();
-        if (!string.IsNullOrWhiteSpace(managedIdentityClientId))
-        {
-            credentialOptions.ManagedIdentityClientId = managedIdentityClientId;
-        }
-
+        if (!string.IsNullOrWhiteSpace(managedIdClientId))
+            credentialOptions.ManagedIdentityClientId = managedIdClientId;
         var credential = new DefaultAzureCredential(credentialOptions);
 
         builder.Services.AddDbContext<EcommerceDbContext>(options =>
         {
-            var sqlConnection = new SqlConnection(connectionString);
-
+            var sqlConn = new SqlConnection(connectionString);
             try
             {
-                var tokenRequestContext = new TokenRequestContext(new[] { "https://database.windows.net/.default" });
-                var token = credential.GetToken(tokenRequestContext, default);
-                sqlConnection.AccessToken = token.Token;
-                Serilog.Log.Information("Jeton d'accès Azure utilisé pour la connexion SQL.");
+                var tokenRequest = new TokenRequestContext(new[] { "https://database.windows.net/.default" });
+                sqlConn.AccessToken = credential.GetToken(tokenRequest, default).Token;
+                Log.Information("Azure SQL AccessToken applied");
             }
-            catch (Exception ex)
+            catch
             {
-                Serilog.Log.Warning(ex, "Échec de la récupération du jeton, utilisation de la connexion standard.");
+                Log.Warning("Managed Identity token failed, using connection string credentials");
             }
-
-            options.UseSqlServer(sqlConnection);
+            options.UseSqlServer(sqlConn);
         });
-
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-        // Identity
-        builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+        // Identity setup
+        builder.Services.AddIdentity<IdentityUser, IdentityRole>(opts =>
         {
-            options.SignIn.RequireConfirmedAccount = true;
+            opts.SignIn.RequireConfirmedAccount = true;
         })
         .AddEntityFrameworkStores<EcommerceDbContext>()
         .AddDefaultTokenProviders();
 
-        builder.Services.Configure<IdentityOptions>(options =>
+        builder.Services.Configure<IdentityOptions>(opts =>
         {
-            options.Password.RequireDigit = true;
-            options.Password.RequireLowercase = true;
-            options.Password.RequireNonAlphanumeric = true;
-            options.Password.RequireUppercase = true;
-            options.Password.RequiredLength = 6;
-            options.Password.RequiredUniqueChars = 1;
+            opts.Password.RequireDigit = true;
+            opts.Password.RequireLowercase = true;
+            opts.Password.RequireUppercase = true;
+            opts.Password.RequireNonAlphanumeric = true;
+            opts.Password.RequiredLength = 6;
+            opts.Password.RequiredUniqueChars = 1;
 
-            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-            options.Lockout.MaxFailedAccessAttempts = 5;
-            options.Lockout.AllowedForNewUsers = true;
+            opts.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+            opts.Lockout.MaxFailedAccessAttempts = 5;
+            opts.Lockout.AllowedForNewUsers = true;
 
-            options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
-            options.User.RequireUniqueEmail = false;
+            opts.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+            opts.User.RequireUniqueEmail = false;
         });
 
-        // Configuration des cookies
-        builder.Services.ConfigureApplicationCookie(options =>
-        {
-            options.ExpireTimeSpan = TimeSpan.FromHours(12);
-            options.SlidingExpiration = false;
-            options.Cookie.Name = "MyCookie";
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-            options.Cookie.HttpOnly = true;
-            options.Cookie.IsEssential = true;
-
-            options.LoginPath = "/Identity/Account/Login";
-            options.LogoutPath = "/Identity/Account/Logout";
-            options.AccessDeniedPath = "/Admin/AccessDenied";
-        });
-
-        // Authentification Azure AD
-        builder.Services.AddAuthentication(options =>
-        {
-            options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
-        })
-        .AddCookie()
-        .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
-        {
-            builder.Configuration.Bind("Authentication:AzureAd", options);
-            options.ResponseType = "code";
-            options.SaveTokens = true;
-
-            options.TokenValidationParameters = new TokenValidationParameters
+        // Authentication & Authorization
+        builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            .AddCookie(options =>
             {
-                NameClaimType = "name",
-                RoleClaimType = "roles"
-            };
-
-            options.Events = new OpenIdConnectEvents
-            {
-                OnRemoteFailure = context =>
+                // Cookie settings
+                options.LoginPath = "/Identity/Account/Login";
+                options.LogoutPath = "/Identity/Account/Logout";
+                options.AccessDeniedPath = "/Admin/AccessDenied";
+                options.ExpireTimeSpan = TimeSpan.FromHours(12);
+                options.SlidingExpiration = false;
+                options.Cookie.Name = "MyCookie";
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+                // Override default 403 handling
+                options.Events = new CookieAuthenticationEvents
                 {
-                    if (context.Failure?.Message.Contains("access_denied") == true)
+                    OnRedirectToAccessDenied = ctx =>
                     {
-                        context.HandleResponse();
-                        context.Response.Redirect("/Admin/AccessDenied");
+                        ctx.Response.Redirect(options.AccessDeniedPath + "?ReturnUrl=" + Uri.EscapeDataString(ctx.Request.Path));
+                        return Task.CompletedTask;
                     }
-                    return Task.CompletedTask;
-                }
-            };
-        });
-
-        // Autorisation
+                };
+            })
+            .AddOpenIdConnect("AzureAD", options =>
+            {
+                builder.Configuration.Bind("Authentication:AzureAd", options);
+                options.ResponseType = "code";
+                options.SaveTokens = true;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    NameClaimType = "name",
+                    RoleClaimType = "roles"
+                };
+                options.Events = new OpenIdConnectEvents
+                {
+                    OnRemoteFailure = ctx =>
+                    {
+                        // Azure AD denied (e.g. no consent)
+                        ctx.HandleResponse();
+                        ctx.Response.Redirect("/Admin/AccessDenied");
+                        return Task.CompletedTask;
+                    }
+                };
+            });
         builder.Services.AddAuthorization();
 
-        // Razor Pages, Sessions, HTTP
+        // Razor, Sessions, HTTP
         builder.Services.AddRazorPages();
-        builder.Services.AddHttpClient();
-        builder.Services.AddSession(options =>
+        builder.Services.AddSession(opts =>
         {
-            options.IdleTimeout = TimeSpan.FromMinutes(30);
-            options.Cookie.HttpOnly = true;
-            options.Cookie.IsEssential = true;
+            opts.IdleTimeout = TimeSpan.FromMinutes(30);
+            opts.Cookie.HttpOnly = true;
+            opts.Cookie.IsEssential = true;
         });
 
-        // Services personnalisés
+        // App-specific services
         builder.Services.AddSingleton<PayPalService>();
         builder.Services.AddSingleton<RazorpayService>();
         builder.Services.AddScoped<ZohoTokenService>();
         builder.Services.AddScoped<ZohoEmailService>();
-
-        // Authorization handlers
         builder.Services.AddScoped<IAuthorizationHandler, ContactIsOwnerAuthorizationHandler>();
         builder.Services.AddScoped<IAuthorizationHandler, ContactAdministratorsAuthorizationHandler>();
         builder.Services.AddScoped<IAuthorizationHandler, ContactManagerAuthorizationHandler>();
 
         var app = builder.Build();
 
-        // Migration + seed
-        using (var scope = app.Services.CreateScope())
+        // Database migrations & seed
+        using(var scope = app.Services.CreateScope())
         {
-            var services = scope.ServiceProvider;
+            var svc = scope.ServiceProvider;
             try
             {
-                var context = services.GetRequiredService<EcommerceDbContext>();
-                context.Database.Migrate();
-
-                var testUserPw = builder.Configuration.GetValue<string>("SeedUserPW");
-                await SeedData.Initialize(services, testUserPw);
+                var ctx = svc.GetRequiredService<EcommerceDbContext>();
+                ctx.Database.Migrate();
+                var pw = builder.Configuration.GetValue<string>("SeedUserPW");
+                await SeedData.Initialize(svc, pw);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
-                Serilog.Log.Error(ex, "Erreur pendant l'initialisation de la base de données");
+                Log.Error(ex, "Database init error");
             }
         }
 
         // Pipeline
         if (app.Environment.IsDevelopment())
-        {
             app.UseDeveloperExceptionPage();
-        }
         else
         {
             app.UseExceptionHandler("/Error");
@@ -204,13 +180,12 @@ public static class Program
         app.UseHttpsRedirection();
         app.UseStaticFiles();
         app.UseRouting();
-
+        app.UseSession();
         app.UseAuthentication();
         app.UseAuthorization();
-        app.UseSession();
 
         app.MapRazorPages();
-
         await app.RunAsync();
     }
 }
+
