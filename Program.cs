@@ -1,15 +1,10 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using ECommerce.Models;
 using ECommerce.Authorization;
 using Microsoft.AspNetCore.Authorization;
-using Azure.Identity;
-using Azure.Core;
-using Microsoft.Data.SqlClient;
 
 public static class Program
 {
@@ -24,12 +19,6 @@ public static class Program
             .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables();
 
-        string clientId = builder.Configuration["Authentication:AzureAd:ClientId"];
-        if (string.IsNullOrEmpty(clientId))
-        {
-            throw new Exception("AzureAd ClientId introuvable dans la configuration !");
-        }
-
         // Serilog
         builder.Host.UseSerilog((context, services, config) =>
         {
@@ -41,35 +30,10 @@ public static class Program
         });
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-        var managedIdentityClientId = builder.Configuration["ManagedIdentity:ClientId"];
 
-        // Authentification Azure
-        var credentialOptions = new DefaultAzureCredentialOptions();
-        if (!string.IsNullOrWhiteSpace(managedIdentityClientId))
-        {
-            credentialOptions.ManagedIdentityClientId = managedIdentityClientId;
-        }
-
-        var credential = new DefaultAzureCredential(credentialOptions);
-
+        // DbContext avec connexion SQL standard
         builder.Services.AddDbContext<EcommerceDbContext>(options =>
-        {
-            var sqlConnection = new SqlConnection(connectionString);
-
-            try
-            {
-                var tokenRequestContext = new TokenRequestContext(new[] { "https://database.windows.net/.default" });
-                var token = credential.GetToken(tokenRequestContext, default);
-                sqlConnection.AccessToken = token.Token;
-                Serilog.Log.Information("Jeton d'accès Azure utilisé pour la connexion SQL.");
-            }
-            catch (Exception ex)
-            {
-                Serilog.Log.Warning(ex, "Échec de la récupération du jeton, utilisation de la connexion standard.");
-            }
-
-            options.UseSqlServer(sqlConnection);
-        });
+            options.UseSqlServer(connectionString));
 
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -104,34 +68,19 @@ public static class Program
             options.ExpireTimeSpan = TimeSpan.FromHours(12);
             options.SlidingExpiration = false;
             options.Cookie.Name = "MyCookie";
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;  // Sécuriser les cookies uniquement sur HTTPS
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
             options.Cookie.HttpOnly = true;
             options.Cookie.IsEssential = true;
 
-            // Correction des chemins de redirection pour la connexion/déconnexion et l'accès refusé
             options.LoginPath = "/Identity/Account/Login";
             options.LogoutPath = "/Identity/Account/Logout";
             options.AccessDeniedPath = "/Admin/AccessDenied";
         });
 
-        // Authentification Azure AD
-        builder.Services.AddAuthentication(options =>
-        {
-            options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
-        })
-        .AddCookie()
-        .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
-        {
-            builder.Configuration.Bind("Authentication:AzureAd", options);
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                NameClaimType = "name",
-                RoleClaimType = "roles"
-            };
-        });
+        // Authentification par cookie seulement (pas d’Azure AD / OpenId)
+        builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            .AddCookie();
 
-        // Autorisation
         builder.Services.AddAuthorization();
 
         // Razor Pages, Sessions, HTTP
