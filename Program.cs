@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.Data.SqlClient;
 using Serilog;
 
 public static class Program
@@ -17,29 +17,28 @@ public static class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // ─── Configuration ───────────────────────────────────────────
+        // ─── § CONFIGURATION ──────────────────────────────────────────
         builder.Configuration
             .SetBasePath(builder.Environment.ContentRootPath)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables();
 
-        // Vérification du clientId Azure AD
-        string clientId = builder.Configuration["Authentication:AzureAd:ClientId"];
+        // Vérif. ClientId Azure AD
+        var clientId = builder.Configuration["Authentication:AzureAd:ClientId"];
         if (string.IsNullOrEmpty(clientId))
             throw new Exception("AzureAd ClientId introuvable dans la configuration !");
 
-        // ─── Serilog ──────────────────────────────────────────────────
+        // ─── § SERILOG ─────────────────────────────────────────────────
         builder.Host.UseSerilog((ctx, svc, cfg) =>
-            cfg
-            .ReadFrom.Configuration(ctx.Configuration)
-            .Enrich.FromLogContext()
-            .Enrich.WithMachineName()
-            .WriteTo.Console()
-            .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
+            cfg.ReadFrom.Configuration(ctx.Configuration)
+               .Enrich.FromLogContext()
+               .Enrich.WithMachineName()
+               .WriteTo.Console()
+               .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
         );
 
-        // ─── DbContext avec Token Azure (Managed Identity) ─────────────
+        // ─── § DBCONTEXT AVEC MANAGED IDENTITY ─────────────────────────
         var connString = builder.Configuration.GetConnectionString("DefaultConnection");
         var miClientId = builder.Configuration["ManagedIdentity:ClientId"];
         var credOpts = new DefaultAzureCredentialOptions();
@@ -52,21 +51,20 @@ public static class Program
             var sqlConn = new SqlConnection(connString);
             try
             {
-                var trc = new TokenRequestContext(new[] { "https://database.windows.net/.default" });
+                var trc   = new TokenRequestContext(new[]{ "https://database.windows.net/.default" });
                 var token = credential.GetToken(trc, default);
                 sqlConn.AccessToken = token.Token;
-                Log.Information("Jeton d'accès Azure récupéré.");
+                Log.Information("Jeton Azure SQL récupéré");
             }
             catch
             {
-                Log.Warning("Impossible de récupérer le token, connexion sans AccessToken.");
+                Log.Warning("Jeton Azure SQL non récupéré, connexion classique");
             }
             opts.UseSqlServer(sqlConn);
         });
-
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-        // ─── Identity ─────────────────────────────────────────────────
+        // ─── § IDENTITY ───────────────────────────────────────────────
         builder.Services.AddIdentity<IdentityUser, IdentityRole>(opts =>
         {
             opts.SignIn.RequireConfirmedAccount = true;
@@ -76,37 +74,50 @@ public static class Program
 
         builder.Services.Configure<IdentityOptions>(opts =>
         {
-            // -- Password
-            opts.Password.RequireDigit = true;
-            opts.Password.RequireLowercase = true;
-            opts.Password.RequireUppercase = true;
+            // Password
+            opts.Password.RequireDigit           = true;
+            opts.Password.RequireLowercase       = true;
+            opts.Password.RequireUppercase       = true;
             opts.Password.RequireNonAlphanumeric = true;
-            opts.Password.RequiredLength = 6;
-            opts.Password.RequiredUniqueChars = 1;
-            // -- Lockout
-            opts.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+            opts.Password.RequiredLength         = 6;
+            opts.Password.RequiredUniqueChars    = 1;
+            // Lockout
+            opts.Lockout.DefaultLockoutTimeSpan  = TimeSpan.FromMinutes(5);
             opts.Lockout.MaxFailedAccessAttempts = 5;
-            opts.Lockout.AllowedForNewUsers = true;
-            // -- User
+            opts.Lockout.AllowedForNewUsers      = true;
+            // User
             opts.User.AllowedUserNameCharacters =
                 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
             opts.User.RequireUniqueEmail = false;
         });
 
-        // ─── Cookie & OpenID Connect ──────────────────────────────────
+        // ─── § AUTHENTICATION & AUTHORIZATION ─────────────────────────
         builder.Services.AddAuthentication(options =>
         {
-            options.DefaultScheme  = CookieAuthenticationDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+            // On force Cookie pour TOUS les challenges, afin que
+            // OnRedirectToLogin / OnRedirectToAccessDenied soit déclenché
+            options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            options.DefaultSignInScheme       = CookieAuthenticationDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme    = CookieAuthenticationDefaults.AuthenticationScheme;
         })
         .AddCookie(opts =>
         {
+            // Chemins personnalisés
             opts.LoginPath        = "/Identity/Account/Login";
             opts.LogoutPath       = "/Identity/Account/Logout";
             opts.AccessDeniedPath = "/Admin/AccessDenied";
 
+            // Override des redirects
             opts.Events = new CookieAuthenticationEvents
             {
+                // Non authentifié → page de login
+                OnRedirectToLogin = ctx =>
+                {
+                    ctx.Response.Redirect("/Identity/Account/Login?returnUrl=" +
+                        Uri.EscapeDataString(ctx.Request.Path + ctx.Request.QueryString));
+                    return Task.CompletedTask;
+                },
+                // Authentifié mais pas autorisé → AccessDenied
                 OnRedirectToAccessDenied = ctx =>
                 {
                     ctx.Response.Redirect("/Admin/AccessDenied");
@@ -114,6 +125,7 @@ public static class Program
                 }
             };
         })
+        // On ajoute OpenID Connect UNIQUEMENT pour l’authent Azure AD
         .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, opts =>
         {
             builder.Configuration.Bind("Authentication:AzureAd", opts);
@@ -124,11 +136,11 @@ public static class Program
                 NameClaimType = "name",
                 RoleClaimType = "roles"
             };
+            // En cas d’échec OIDC (ex: access_denied)
             opts.Events = new OpenIdConnectEvents
             {
                 OnRemoteFailure = ctx =>
                 {
-                    // En cas de refus de consentement ou autre échec OIDC
                     ctx.HandleResponse();
                     ctx.Response.Redirect("/Admin/AccessDenied");
                     return Task.CompletedTask;
@@ -138,13 +150,13 @@ public static class Program
 
         builder.Services.AddAuthorization();
 
-        // ─── Autres services ─────────────────────────────────────────
+        // ─── § AUTRES SERVICES ────────────────────────────────────────
         builder.Services.AddRazorPages();
         builder.Services.AddHttpClient();
         builder.Services.AddSession(opts =>
         {
             opts.IdleTimeout = TimeSpan.FromMinutes(30);
-            opts.Cookie.HttpOnly = true;
+            opts.Cookie.HttpOnly   = true;
             opts.Cookie.IsEssential = true;
         });
         builder.Services.AddSingleton<PayPalService>();
@@ -155,7 +167,7 @@ public static class Program
         builder.Services.AddScoped<IAuthorizationHandler, ContactAdministratorsAuthorizationHandler>();
         builder.Services.AddScoped<IAuthorizationHandler, ContactManagerAuthorizationHandler>();
 
-        // ─── Build & migration ───────────────────────────────────────
+        // ─── § BUILD & MIGRATE ───────────────────────────────────────
         var app = builder.Build();
         using(var scope = app.Services.CreateScope())
         {
@@ -164,18 +176,20 @@ public static class Program
             {
                 var ctx = svc.GetRequiredService<EcommerceDbContext>();
                 ctx.Database.Migrate();
-                var pw = builder.Configuration.GetValue<string>("SeedUserPW");
+                var pw  = builder.Configuration["SeedUserPW"];
                 await SeedData.Initialize(svc, pw);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Erreur pendant la migration/seed.");
+                Log.Error(ex, "Erreur migration/seed");
             }
         }
 
-        // ─── Pipeline ────────────────────────────────────────────────
+        // ─── § MIDDLEWARE PIPELINE ────────────────────────────────────
         if (app.Environment.IsDevelopment())
+        {
             app.UseDeveloperExceptionPage();
+        }
         else
         {
             app.UseExceptionHandler("/Error");
@@ -191,7 +205,6 @@ public static class Program
         app.UseSession();
 
         app.MapRazorPages();
-
         await app.RunAsync();
     }
 }
