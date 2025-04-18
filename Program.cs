@@ -3,12 +3,10 @@ using Azure.Identity;
 using ECommerce.Authorization;
 using ECommerce.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Serilog;
 
 public static class Program
@@ -23,11 +21,6 @@ public static class Program
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables();
-
-        // Vérif. ClientId Azure AD
-        var clientId = builder.Configuration["Authentication:AzureAd:ClientId"];
-        if (string.IsNullOrEmpty(clientId))
-            throw new Exception("AzureAd ClientId introuvable dans la configuration !");
 
         // ─── § SERILOG ─────────────────────────────────────────────────
         builder.Host.UseSerilog((ctx, svc, cfg) =>
@@ -92,61 +85,35 @@ public static class Program
         });
 
         // ─── § AUTHENTICATION & AUTHORIZATION ─────────────────────────
-        builder.Services.AddAuthentication(options =>
-        {
-            // On force Cookie pour TOUS les challenges, afin que
-            // OnRedirectToLogin / OnRedirectToAccessDenied soit déclenché
-            options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-            options.DefaultSignInScheme       = CookieAuthenticationDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme    = CookieAuthenticationDefaults.AuthenticationScheme;
-        })
-        .AddCookie(opts =>
-        {
-            // Chemins personnalisés
-            opts.LoginPath        = "/Identity/Account/Login";
-            opts.LogoutPath       = "/Identity/Account/Logout";
-            opts.AccessDeniedPath = "/Admin/AccessDenied";
+        builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            .AddCookie(opts =>
+            {
+                // Chemins personnalisés
+                opts.LoginPath        = "/Identity/Account/Login";
+                opts.LogoutPath       = "/Identity/Account/Logout";
+                opts.AccessDeniedPath = "/Admin/AccessDenied";
 
-            // Override des redirects
-            opts.Events = new CookieAuthenticationEvents
-            {
-                // Non authentifié → page de login
-                OnRedirectToLogin = ctx =>
+                // Override des redirects
+                opts.Events = new CookieAuthenticationEvents
                 {
-                    ctx.Response.Redirect("/Identity/Account/Login?returnUrl=" +
-                        Uri.EscapeDataString(ctx.Request.Path + ctx.Request.QueryString));
-                    return Task.CompletedTask;
-                },
-                // Authentifié mais pas autorisé → AccessDenied
-                OnRedirectToAccessDenied = ctx =>
-                {
-                    ctx.Response.Redirect("/Admin/AccessDenied");
-                    return Task.CompletedTask;
-                }
-            };
-        })
-        // On ajoute OpenID Connect UNIQUEMENT pour l’authent Azure AD
-        .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, opts =>
-        {
-            builder.Configuration.Bind("Authentication:AzureAd", opts);
-            opts.ResponseType = "code";
-            opts.SaveTokens   = true;
-            opts.TokenValidationParameters = new TokenValidationParameters
-            {
-                NameClaimType = "name",
-                RoleClaimType = "roles"
-            };
-            // En cas d’échec OIDC (ex: access_denied)
-            opts.Events = new OpenIdConnectEvents
-            {
-                OnRemoteFailure = ctx =>
-                {
-                    ctx.HandleResponse();
-                    ctx.Response.Redirect("/Admin/AccessDenied");
-                    return Task.CompletedTask;
-                }
-            };
-        });
+                    // Non authentifié → page de login
+                    OnRedirectToLogin = ctx =>
+                    {
+                        ctx.Response.Redirect(
+                          opts.LoginPath +
+                          "?returnUrl=" +
+                          Uri.EscapeDataString(ctx.Request.Path + ctx.Request.QueryString)
+                        );
+                        return Task.CompletedTask;
+                    },
+                    // Authentifié mais pas autorisé → AccessDenied
+                    OnRedirectToAccessDenied = ctx =>
+                    {
+                        ctx.Response.Redirect(opts.AccessDeniedPath);
+                        return Task.CompletedTask;
+                    }
+                };
+            });
 
         builder.Services.AddAuthorization();
 
@@ -155,7 +122,7 @@ public static class Program
         builder.Services.AddHttpClient();
         builder.Services.AddSession(opts =>
         {
-            opts.IdleTimeout = TimeSpan.FromMinutes(30);
+            opts.IdleTimeout    = TimeSpan.FromMinutes(30);
             opts.Cookie.HttpOnly   = true;
             opts.Cookie.IsEssential = true;
         });
@@ -208,3 +175,4 @@ public static class Program
         await app.RunAsync();
     }
 }
+
