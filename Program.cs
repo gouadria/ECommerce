@@ -57,7 +57,7 @@ public static class Program
         });
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-        // ─── § IDENTITY ───────────────────────────────────────────────
+         // ─── Identity ─────────────────────────────────────────────────
         builder.Services.AddIdentity<IdentityUser, IdentityRole>(opts =>
         {
             opts.SignIn.RequireConfirmedAccount = true;
@@ -85,13 +85,9 @@ public static class Program
         });
 
         // ─── § AUTHENTICATION & AUTHORIZATION ─────────────────────────
-      // Après AddIdentity
-builder.Services.AddIdentity<IdentityUser, IdentityRole>(opts =>
-{
-    opts.SignIn.RequireConfirmedAccount = true;
-})
-.AddEntityFrameworkStores<EcommerceDbContext>()
-.AddDefaultTokenProviders();
+    
+
+
 
 // Fix redirections incorrectes
 builder.Services.ConfigureApplicationCookie(opts =>
