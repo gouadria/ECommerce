@@ -85,35 +85,40 @@ public static class Program
         });
 
         // ─── § AUTHENTICATION & AUTHORIZATION ─────────────────────────
-        builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-            .AddCookie(opts =>
-            {
-                // Chemins personnalisés
-                opts.LoginPath        = "/Identity/Account/Login";
-                opts.LogoutPath       = "/Identity/Account/Logout";
-                opts.AccessDeniedPath = "/Admin/AccessDenied";
+      // Après AddIdentity
+builder.Services.AddIdentity<IdentityUser, IdentityRole>(opts =>
+{
+    opts.SignIn.RequireConfirmedAccount = true;
+})
+.AddEntityFrameworkStores<EcommerceDbContext>()
+.AddDefaultTokenProviders();
 
-                // Override des redirects
-                opts.Events = new CookieAuthenticationEvents
-                {
-                    // Non authentifié → page de login
-                    OnRedirectToLogin = ctx =>
-                    {
-                        ctx.Response.Redirect(
-                          opts.LoginPath +
-                          "?returnUrl=" +
-                          Uri.EscapeDataString(ctx.Request.Path + ctx.Request.QueryString)
-                        );
-                        return Task.CompletedTask;
-                    },
-                    // Authentifié mais pas autorisé → AccessDenied
-                    OnRedirectToAccessDenied = ctx =>
-                    {
-                        ctx.Response.Redirect(opts.AccessDeniedPath);
-                        return Task.CompletedTask;
-                    }
-                };
-            });
+// Fix redirections incorrectes
+builder.Services.ConfigureApplicationCookie(opts =>
+{
+    opts.LoginPath = "/Identity/Account/Login";
+    opts.AccessDeniedPath = "/Admin/AccessDenied";
+    opts.LogoutPath = "/Identity/Account/Logout";
+
+    opts.Events = new CookieAuthenticationEvents
+    {
+        OnRedirectToLogin = ctx =>
+        {
+            ctx.Response.Redirect(
+              opts.LoginPath +
+              "?returnUrl=" +
+              Uri.EscapeDataString(ctx.Request.Path + ctx.Request.QueryString)
+            );
+            return Task.CompletedTask;
+        },
+        OnRedirectToAccessDenied = ctx =>
+        {
+            ctx.Response.Redirect(opts.AccessDeniedPath);
+            return Task.CompletedTask;
+        }
+    };
+});
+
 
         builder.Services.AddAuthorization();
 
