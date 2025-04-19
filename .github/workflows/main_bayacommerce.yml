@@ -67,9 +67,7 @@ jobs:
           --project ECommerce.csproj
           --startup-project ECommerce.csproj
           --configuration Release
-        env:
-          ConnectionStrings__DefaultConnection: ${{ secrets.AZURE_SQL_CONNECTION }}
-          DOTNET_ENVIRONMENT: Production
+          --connection "${{ secrets.AZURE_SQL_CONNECTION }}"
 
   deploy:
     runs-on: windows-latest
