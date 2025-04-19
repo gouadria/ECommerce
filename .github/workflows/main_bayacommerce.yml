@@ -1,4 +1,4 @@
-name: Build, migrate & deploy ASP.Net Core to Azure Web App - bayacommerce
+name: Build & deploy ASP.Net Core to Azure Web App - bayacommerce
 
 on:
   push:
@@ -42,36 +42,9 @@ jobs:
           name: net-app
           path: ./publish
 
-  migrate:
-    runs-on: windows-latest
-    needs: build
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Install EF Core CLI
-        run: dotnet tool install --global dotnet-ef
-
-      - name: Add EF Core tool to PATH
-        run: echo "$env:USERPROFILE\.dotnet\tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8
-
-      - name: Apply EF Core migrations
-        run: >
-          dotnet ef database update
-          --project ECommerce.csproj
-          --startup-project ECommerce.csproj
-          --configuration Release
-          --connection "${{ secrets.AZURE_SQL_CONNECTION }}"
-
   deploy:
     runs-on: windows-latest
-    needs: [build, migrate]
+    needs: [build]
     environment:
       name: 'Production'
     permissions:
