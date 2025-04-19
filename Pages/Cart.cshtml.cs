@@ -4,10 +4,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ECommerce.Pages
 {
@@ -19,117 +15,92 @@ namespace ECommerce.Pages
 
         public CartModel(EcommerceDbContext context, UserManager<IdentityUser> userManager)
         {
-            _context = context;
+            _context     = context;
             _userManager = userManager;
         }
 
+        // Chargement / création du panier
         public async Task<IActionResult> OnGetAsync()
         {
             var userId = _userManager.GetUserId(User);
-            if (string.IsNullOrEmpty(userId))
-            {
-                return RedirectToPage("/Account/Login");
-            }
+            if (userId == null) return RedirectToPage("/Account/Login");
 
-            var sessionCartId = HttpContext.Session.GetString("CartId");
-            Cart cart;
+            var sessionId = HttpContext.Session.GetString("CartId");
+            Cart cart = null;
 
-            if (string.IsNullOrEmpty(sessionCartId))
-            {
-                cart = new Cart { UserId = userId, CreatedDate = DateTime.UtcNow, CartProducts = new List<CartProduct>() };
-                _context.Carts.Add(cart);
-                await _context.SaveChangesAsync();
-
-                HttpContext.Session.SetString("CartId", cart.CartId.ToString());
-            }
-            else
+            if (int.TryParse(sessionId, out var cid))
             {
                 cart = await _context.Carts
                     .Include(c => c.CartProducts)
-                    .FirstOrDefaultAsync(c => c.CartId.ToString() == sessionCartId);
-
-                if (cart == null)
-                {
-                    cart = new Cart { UserId = userId, CreatedDate = DateTime.UtcNow, CartProducts = new List<CartProduct>() };
-                    _context.Carts.Add(cart);
-                    await _context.SaveChangesAsync();
-                    HttpContext.Session.SetString("CartId", cart.CartId.ToString());
-                }
+                    .FirstOrDefaultAsync(c => c.CartId == cid && c.UserId == userId);
             }
 
+            if (cart == null)
+            {
+                cart = new Cart {
+                  UserId      = userId,
+                  CreatedDate = DateTime.UtcNow
+                };
+                _context.Carts.Add(cart);
+                await _context.SaveChangesAsync();
+            }
+
+            HttpContext.Session.SetString("CartId", cart.CartId.ToString());
             ViewData["Cart"] = cart;
             return Page();
-        }
-        [HttpPost]
-        [IgnoreAntiforgeryToken] // Important pour requêtes AJAX JSON
-        public async Task<IActionResult> OnPostSaveCartAsync([FromBody] List<CartItemDto> cartItems)
-        {
-            var userId = _userManager.GetUserId(User);
-            if (string.IsNullOrEmpty(userId))
-            {
-                return RedirectToPage("/Identity/Account/Login");
-            }
-
-            if (cartItems == null || !cartItems.Any())
-            {
-                return BadRequest(new { success = false, message = "Le panier est vide." });
-            }
-
-            try
-            {
-                var existingCart = await _context.Carts
-                    .Where(c => c.UserId == userId)
-                    .OrderByDescending(c => c.CreatedDate)
-                    .FirstOrDefaultAsync();
-
-                if (existingCart == null)
-                {
-                    existingCart = new Cart { UserId = userId, CreatedDate = DateTime.UtcNow, CartProducts = new List<CartProduct>() };
-                    _context.Carts.Add(existingCart);
-                    await _context.SaveChangesAsync();
-                }
-
-                foreach (var item in cartItems)
-                {
-                    var product = await _context.Products.FindAsync(item.ProductId);
-                    if (product == null)
-                    {
-                        continue;
-                    }
-
-                    var existingProductInCart = await _context.CartProducts
-                        .FirstOrDefaultAsync(cp => cp.CartId == existingCart.CartId && cp.ProductId == item.ProductId);
-
-                    if (existingProductInCart != null)
-                    {
-                        existingProductInCart.Quantity += item.Quantity;
-                    }
-                    else
-                    {
-                        _context.CartProducts.Add(new CartProduct
-                        {
-                            CartId = existingCart.CartId,
-                            ProductId = item.ProductId,
-                            Quantity = item.Quantity,
-                            ProductName = product.ProductName
-                        });
-                    }
-                }
-
-                await _context.SaveChangesAsync();
-                return new JsonResult(new { success = true, message = "Panier enregistré avec succès !" });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Erreur lors de l'enregistrement du panier : {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Erreur interne du serveur." });
-            }
         }
 
         public class CartItemDto
         {
             public int ProductId { get; set; }
-            public int Quantity { get; set; }
+            public int Quantity  { get; set; }
+        }
+
+        // Handler qui reçoit [{ productId, quantity }, …]
+        [IgnoreAntiforgeryToken]
+        public async Task<JsonResult> OnPostSaveCartAsync([FromBody] List<CartItemDto> items)
+        {
+            var userId = _userManager.GetUserId(User);
+            if (userId == null)
+                return new JsonResult(new { success = false, message = "Auth requise" });
+
+            if (items == null || items.Count == 0)
+                return new JsonResult(new { success = false, message = "Panier vide" });
+
+            if (!int.TryParse(HttpContext.Session.GetString("CartId"), out var cartId))
+                return new JsonResult(new { success = false, message = "Session invalide" });
+
+            var cart = await _context.Carts
+                .Include(c => c.CartProducts)
+                .FirstOrDefaultAsync(c => c.CartId == cartId && c.UserId == userId);
+
+            if (cart == null)
+                return new JsonResult(new { success = false, message = "Panier introuvable" });
+
+            // Vider l'ancien contenu
+            _context.CartProducts.RemoveRange(cart.CartProducts);
+            await _context.SaveChangesAsync();
+
+            // Ajouter les nouvelles lignes
+            foreach (var dto in items)
+            {
+                if (dto.ProductId <= 0) continue;
+                var prod = await _context.Products.FindAsync(dto.ProductId);
+                if (prod == null) continue;
+
+                _context.CartProducts.Add(new CartProduct {
+                  CartId      = cart.CartId,
+                  ProductId   = prod.ProductId,
+                  Quantity    = dto.Quantity,
+                  ProductName = prod.ProductName
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
+            // On renvoie l'URL de Checkout
+            var url = Url.Page("/Checkout");
+            return new JsonResult(new { success = true, redirectTo = url });
         }
     }
 }
