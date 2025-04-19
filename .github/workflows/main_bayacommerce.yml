@@ -41,7 +41,6 @@ jobs:
         with:
           name: net-app
           path: ./publish
-
   migrate:
     runs-on: windows-latest
     needs: build
@@ -54,8 +53,11 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Restore EF Core tool (si vous utilisez un manifest local)
-        run: dotnet tool restore
+      - name: Install EF Core CLI
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Add EF Core tool to PATH
+        run: echo "$env:USERPROFILE\.dotnet\tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8
 
       - name: Apply EF Core migrations
         env:
@@ -63,6 +65,8 @@ jobs:
           DOTNET_ENVIRONMENT: Production
         run: dotnet ef database update --project ECommerce.csproj --startup-project ECommerce.csproj --configuration Release
 
+  
+       
   deploy:
     runs-on: windows-latest
     needs: [build, migrate]
