@@ -41,9 +41,11 @@ jobs:
         with:
           name: net-app
           path: ./publish
+
   migrate:
     runs-on: windows-latest
     needs: build
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -60,13 +62,15 @@ jobs:
         run: echo "$env:USERPROFILE\.dotnet\tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8
 
       - name: Apply EF Core migrations
+        run: >
+          dotnet ef database update
+          --project ECommerce.csproj
+          --startup-project ECommerce.csproj
+          --configuration Release
         env:
           ConnectionStrings__DefaultConnection: ${{ secrets.AZURE_SQL_CONNECTION }}
           DOTNET_ENVIRONMENT: Production
-        run: dotnet ef database update --project ECommerce.csproj --startup-project ECommerce.csproj --configuration Release
 
-  
-       
   deploy:
     runs-on: windows-latest
     needs: [build, migrate]
@@ -99,4 +103,3 @@ jobs:
 
       - name: Show deployed URL
         run: echo "https://${{ secrets.AZURE_APP_NAME }}.azurewebsites.net"
-
