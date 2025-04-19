@@ -44,8 +44,8 @@ public class PayPalService
                 locale = "sa-SA",
                 shipping_preference = "NO_SHIPPING",
                 user_action = "PAY_NOW",
-                return_url = "https://localhost:44356/Success",
-                cancel_url = "https://localhost:44356/Cancel",
+                return_url = "https://bayacommerce-bxbzb0fnf9h0dkff.westeurope-01.azurewebsites.net/Success",
+                cancel_url = "https://bayacommerce-bxbzb0fnf9h0dkff.westeurope-01.azurewebsites.net/Cancel",
                 landing_page = "BILLING"
             },
             payment_source = new
