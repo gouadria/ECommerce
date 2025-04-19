@@ -1,38 +1,43 @@
-using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Identity;
 
 namespace ECommerce.Models
 {
-    public partial class Cart
-    {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int CartId { get; set; }  // Identifiant du panier
-         public string UserId { get; set; } = string.Empty;  // Clé étrangère vers IdentityUser
-        public DateTime CreatedDate { get; set; }
+public class Cart
+{
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int CartId { get; set; }
 
-        // Liste des produits dans le panier (relation avec Product)
-        public virtual List<CartProduct> CartProducts { get; set; } = new List<CartProduct>();
+    public string UserId { get; set; } = string.Empty;
 
-         public IdentityUser User { get; set; } = new IdentityUser(); 
-    }
+    public DateTime CreatedDate { get; set; }
 
-    public class CartProduct
-    {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int CartProductId { get; set; }
-        public int CartId { get; set; }
-        public int ProductId { get; set; }
-        public String? ProductName { get; set; }
+    public virtual List<CartProduct> CartProducts { get; set; } = new List<CartProduct>();
 
-        public int Quantity { get; set; } // Stockage de la quantité ici
+    [ForeignKey("UserId")]
+    public IdentityUser? User { get; set; } // PAS de new IdentityUser()
+}
 
-        // Relations
-        public virtual Cart Cart { get; set; } = new Cart(); 
-        public virtual Product Product { get; set; }= new Product();
-    }
+public class CartProduct
+{
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int CartProductId { get; set; }
+
+    public int CartId { get; set; }
+
+    public int ProductId { get; set; }
+
+    public string? ProductName { get; set; }
+
+    public int Quantity { get; set; }
+
+    public virtual Cart? Cart { get; set; }
+
+    public virtual Product? Product { get; set; }
+}
 }
