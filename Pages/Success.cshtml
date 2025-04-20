@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model SuccessModel
 @{
     Layout = "";
@@ -27,3 +27,20 @@ else
     <!-- Bouton Imprimer -->
     <button onclick="window.print()" class="btn btn-warning">Imprimer</button>
 }
+
+<!-- Script pour vider le panier côté client -->
+<script>
+    // Vider le panier du localStorage (selon le nom utilisé)
+    localStorage.removeItem("cart");       // si ton panier est stocké comme "cart"
+    localStorage.removeItem("cartItems");  // ou une autre clé éventuelle
+
+    // Tu peux aussi utiliser localStorage.clear(); si tu veux tout supprimer
+
+    // Mise à jour du compteur panier dans le header (si tu as un ID comme "cart-count")
+    const cartCountElement = document.getElementById("cart-count");
+    if (cartCountElement) {
+        cartCountElement.innerText = "0";
+    }
+
+    console.log("✅ Panier local vidé après commande.");
+</script>
