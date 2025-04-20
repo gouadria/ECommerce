@@ -1,45 +1,42 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using ECommerce.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-public class OrdersModel : PageModel
+namespace ECommerce.Pages.Admin
 {
-    private readonly EcommerceDbContext _context;
-
-    public OrdersModel(EcommerceDbContext context)
+    [Authorize(Roles = "ContactAdministrators, ContactManagers")]
+    public class OrdersModel : PageModel
     {
-        _context = context;
-    }
+        private readonly EcommerceDbContext _context;
+        public OrdersModel(EcommerceDbContext context) => _context = context;
 
-    public List<Order> Orders { get; set; } = new List<Order>();
+        public List<Order> Orders { get; set; } = new();
 
-    public async Task OnGetAsync()
-    {
-        Orders = await _context.Orders
-        .OrderByDescending(o => o.OrderDate)  // Tri décroissant : le plus récent d'abord
-        .ToListAsync();
-    }
-
-    public async Task<IActionResult> OnPostAsync(int[] processedOrders)
-    {
-        // Récupérer les commandes marquées pour mise à jour
-        if (processedOrders != null)
+        public async Task OnGetAsync()
         {
-            var ordersToUpdate = await _context.Orders
-                .Where(o => processedOrders.Contains(o.OrderId))
+            Orders = await _context.Orders
+                .Include(o => o.User)                       // ← on inclut le User
+                .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
-
-            foreach (var order in ordersToUpdate)
-            {
-                // Mettre à jour le statut en fonction de la case à cocher
-                order.Status = "Traité";  // On marque comme traité si la case est cochée
-            }
-
-            await _context.SaveChangesAsync();  // Sauvegarder les changements dans la base de données
         }
 
-        // Rediriger vers la même page pour actualiser la liste des commandes
-        return RedirectToPage();
+        public async Task<IActionResult> OnPostAsync(int[] processedOrders)
+        {
+            if (processedOrders?.Any() == true)
+            {
+                var toUpdate = await _context.Orders
+                    .Where(o => processedOrders.Contains(o.OrderId))
+                    .ToListAsync();
+                foreach (var o in toUpdate) o.Status = "Traité";
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToPage();
+        }
     }
 }
+
