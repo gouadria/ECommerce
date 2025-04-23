@@ -6,10 +6,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-
 public class SuccessModel : PageModel
 {
     private readonly EcommerceDbContext _context;
+
     private readonly UserManager<IdentityUser> _userManager;
 
     public SuccessModel(EcommerceDbContext context, UserManager<IdentityUser> userManager)
@@ -67,8 +67,8 @@ public class SuccessModel : PageModel
 
             var payment = new Payment
             {
-                PaymentId = uniquePaymentId,
-                Name = "Client Name",
+                Id = uniquePaymentId,
+                Name=user.UserName,
                 CardNo = "1234567890123456",
                 ExpiryDate = "12/25",
                 CvvNo = 123,
