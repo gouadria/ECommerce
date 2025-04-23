@@ -5,17 +5,17 @@ using Microsoft.AspNetCore.Identity;
 
 namespace ECommerce.Models
 {
-    public class Payment
-    {
-       [Key]
-    public string? PaymentId { get; set; }    // ex. l’ID retourné par PayPal
+public class Payment
+{
+    [Key]
+    public string Id { get; set; }    
 
-    public string? UserId { get; set; }       // FK vers AspNetUsers
-
-    public decimal Amount { get; set; }      // Montant total payé
-
+    public string? UserId { get; set; }
+    public string? Status { get; set; } 
+    public decimal Amount { get; set; }
+    public string? Currency { get; set; }
     public DateTime CreatedDate { get; set; }
-     public string? Name { get; set; }
+    public string? Name { get; set; }
     public string? CardNo { get; set; }
     public string? ExpiryDate { get; set; }
     public int? CvvNo { get; set; }
@@ -25,5 +25,6 @@ namespace ECommerce.Models
     // Navigation properties
     public virtual IdentityUser? User { get; set; }
     public virtual ICollection<Order>? Orders { get; set; }
-    }
+}
+
 }
