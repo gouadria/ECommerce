@@ -130,7 +130,7 @@ public async Task<IActionResult> OnPostMoyossarCheckoutAsync([FromBody] Checkout
         amount      = amountInHalala,
         currency    = "SAR",
         description = "Commande E‑commerce",
-        callback_url = "https://localhost:5001/Success1?payment_source=Moyasar",
+        callback_url = "https://bayacommerce-bxbzb0fnf9h0dkff.westeurope-01.azurewebsites.net/Success1?payment_source=Moyasar",
         source = new
         {
             type   = "creditcard",
