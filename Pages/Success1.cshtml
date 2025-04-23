@@ -1,0 +1,31 @@
+@page
+@model Success1Model
+@{
+    Layout = "";
+    ViewData["Title"] = "Succès de commande";
+}
+
+<h2>Paiement @Model.PaymentSource réussit !</h2>
+<p>Numéro de paiement : @Model.PaymentId</p>
+
+@if (Model.OrderId == 0)
+{
+    <p class="text-danger">Erreur : impossible de trouver l’identifiant de commande.</p>
+}
+else
+{
+    <p>Merci pour votre achat ! Votre commande n° @Model.OrderId a été enregistrée.</p>
+    <a asp-page="/Invoice" asp-route-orderId="@Model.OrderId" class="btn btn-primary">
+      Voir la facture
+    </a>
+    <a asp-page="/DownloadInvoice" asp-route-orderId="@Model.OrderId" class="btn btn-success">
+      Télécharger la facture (PDF)
+    </a>
+    <button onclick="window.print()" class="btn btn-warning">Imprimer</button>
+}
+
+<script>
+  localStorage.removeItem("cart");
+  const c = document.getElementById("cart-count");
+  if (c) c.innerText = "0";
+</script>
